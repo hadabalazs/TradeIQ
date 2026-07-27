@@ -1,0 +1,730 @@
+// Open Finance & Open Banking dilemmas.
+// Grounded in the curriculum for modules 1-5 of the openfinance course.
+// Character cast: Aisha (Head of Product), Rashid (Compliance & Regulatory Affairs Lead), Sara (Head of Engineering / Security), Khalid (CBUAE relationship manager).
+
+export const OPENFINANCE_DILEMMAS = [
+  // ═══════════════════════════════════════════════════
+  // MODULE 1 — Foundations of Open Banking & Open Finance
+  // ═══════════════════════════════════════════════════
+  {
+    id: "of_m1_screen_scraping",
+    title: "The Screen-Scraping Shortcut",
+    course: "openfinance",
+    module: 1,
+    dilemmaType: "stakeholder_pressure",
+    characters: ["Aisha (Head of Product)", "Sara (Head of Engineering / Security)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Sara",
+        text: "An engineer proposes screen-scraping a bank's consumer portal to meet the launch deadline, instead of waiting for API Hub onboarding to complete. Screen scraping means sharing banking credentials with a third party — a serious security risk that Open Finance was designed to replace. Ship the scraping version now, or wait for proper API Hub integration?",
+        choices: [
+          { text: "Ship the scraping version — launch on time, migrate to APIs later", next: "outcome_ship" },
+          { text: "Wait for API Hub onboarding — no scraping, launch when secure", next: "outcome_wait" },
+          { text: "Ship scraping but only for read-only data, not payments", next: "outcome_readonly" },
+        ],
+      },
+      outcome_ship: {
+        type: "consequence",
+        tone: "negative",
+        text: "You ship the scraping version. Customers must share their actual banking credentials with FinSmart — the exact security risk Open Finance was designed to eliminate. If credentials are compromised, FinSmart is liable. The CBUAE and PDPL require appropriate technical security measures — screen scraping customer banking portals without an API-based, consent-driven framework violates the spirit of the Open Finance Regulation. When the regulator discovers the approach during onboarding review, FinSmart's Open Finance Licence application is jeopardised, and the launch is delayed anyway.",
+        learningPoint: "Screen scraping requires customers to share banking credentials with third parties — the security risk Open Finance was designed to eliminate — and shipping it to meet a deadline undermines the regulatory and security foundation of the entire Open Finance model.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_wait: {
+        type: "consequence",
+        tone: "positive",
+        text: "You wait for API Hub onboarding. FinSmart integrates with the Nebras API Hub, implements FAPI security profiles, and uses OAuth 2.0 with token-based access — customers never share credentials, they authenticate with their own bank through SCA. The launch is delayed by weeks, but the security posture is correct: token-based, consent-driven, FAPI-compliant. The CBUAE review goes smoothly because the architecture matches the regulatory framework. Aisha communicates the delay transparently to stakeholders, framing it as a security-first decision that protects customers and the licence.",
+        learningPoint: "Waiting for proper API Hub integration with OAuth 2.0 token-based access and FAPI security ensures customers never share credentials — the launch is delayed but the security and regulatory foundation is correct.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_readonly: {
+        type: "consequence",
+        tone: "negative",
+        text: "You ship scraping for read-only data only. But read-only screen scraping still requires customers to share banking credentials — the security risk exists regardless of whether payments are involved. If a malicious actor captures those credentials, they can initiate payments through the bank's portal directly. Limiting to 'read-only' doesn't protect the credentials themselves. Sara objects: the credential-sharing risk is the same, and the PDPL's security requirements apply to all data processing, not just payment initiation. The partial approach doesn't meaningfully reduce the risk.",
+        learningPoint: "Screen scraping for read-only data still exposes banking credentials — the security risk exists regardless of whether the third party initiates payments, because the credentials themselves can be used for any banking operation.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Open Finance replaced screen scraping for a reason — don't reintroduce the risk to meet a deadline.",
+        relatedTopics: ["What is Open Banking?", "OAuth 2.0 and OpenID Connect"],
+      },
+    },
+  },
+  {
+    id: "of_m1_scope_creep",
+    title: "The Scope Creep Pitch",
+    course: "openfinance",
+    module: 1,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A partner wants FinSmart to pitch itself as 'Open Data' — covering telecoms and utility data too — even though it only holds an Open Finance licence. Open Banking is the narrowest scope (payment accounts), Open Finance is broader (investments, insurance, loans), and Open Data is the broadest (telecoms, energy, utilities, government). Go along with the broader positioning, or correct it?",
+        choices: [
+          { text: "Go along — 'Open Data' sounds more impressive and attracts partners", next: "outcome_go_along" },
+          { text: "Correct it — FinSmart is licensed for Open Finance, not Open Data", next: "outcome_correct" },
+          { text: "Pitch Open Finance but mention Open Data as a future roadmap", next: "outcome_future" },
+        ],
+      },
+      outcome_go_along: {
+        type: "consequence",
+        tone: "negative",
+        text: "You go along with the 'Open Data' positioning. FinSmart is licensed under the CBUAE Open Finance framework — which covers banking, insurance, and service initiation. It does not cover telecoms, energy, or utility data. Marketing services beyond the licence scope is a regulatory misrepresentation. Rashid flags it immediately: if FinSmart pitches itself as an Open Data provider, customers and partners may share telecoms or utility data expecting the same regulatory protections — which don't apply. The CBUAE could view this as operating outside the licensed scope, risking licence suspension.",
+        learningPoint: "Marketing services beyond the licensed scope is a regulatory misrepresentation — the Open Finance Licence covers banking, insurance, and service initiation, not the broader Open Data scope of telecoms, energy, and utilities.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_correct: {
+        type: "consequence",
+        tone: "positive",
+        text: "You correct the positioning. FinSmart is licensed for Open Finance — covering banking products (deposits, accounts, cards, loans, mortgages), insurance products (life and general), and service initiation. This is already broader than most jurisdictions' Open Banking frameworks. The pitch is honest: FinSmart provides Open Finance services under the CBUAE framework, with clear scope boundaries. Rashid documents the correct positioning, and the partner understands exactly what FinSmart can and cannot do. The relationship is built on accurate expectations.",
+        learningPoint: "Correcting the scope positioning ensures FinSmart markets only what it is licensed for — Open Finance covers banking, insurance, and service initiation, which is already broader than most Open Banking regimes, and accurate positioning builds trust with partners and regulators.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_future: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You pitch Open Finance but mention Open Data as future roadmap. This is acceptable if clearly framed as aspirational — FinSmart currently provides Open Finance services and may explore Open Data if the regulatory framework expands. But if the 'future' framing is ambiguous, partners may assume current capability. Rashid insists on clear language: 'FinSmart is licensed for Open Finance today. Open Data scope would require additional regulatory framework and licensing.' The roadmap framing is honest but requires careful communication to avoid misinterpretation.",
+        learningPoint: "Mentioning future scope as roadmap is acceptable if clearly framed as aspirational and not current capability — the distinction between licensed scope today and potential future scope must be unambiguous to avoid regulatory misrepresentation.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Know your scope — Open Finance is already broader than Open Banking. Don't overstate it.",
+        relatedTopics: ["Open Banking vs Open Finance vs Open Data", "Key Stakeholders in the Open Finance Ecosystem"],
+      },
+    },
+  },
+  {
+    id: "of_m1_one_click_consent",
+    title: "The One-Click Consent Design",
+    course: "openfinance",
+    module: 1,
+    dilemmaType: "stakeholder_pressure",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "Design wants a single 'Allow All' button at onboarding to reduce friction — bundling every data scope FinSmart might ever want into one consent. But consent in Open Finance must be explicit, informed, specific, time-limited, and revocable. Does bundling all scopes into one click respect those principles?",
+        choices: [
+          { text: "Ship the 'Allow All' button — reduce friction, increase conversion", next: "outcome_allow" },
+          { text: "Insist on scope-by-scope consent — each data type approved individually", next: "outcome_scope" },
+          { text: "Ship 'Allow All' but default to minimal scopes, opt-in for the rest", next: "outcome_default" },
+        ],
+      },
+      outcome_allow: {
+        type: "consequence",
+        tone: "negative",
+        text: "You ship the 'Allow All' button. Consent is no longer specific — the customer doesn't understand which data scopes they're granting (accounts:read, payments:write, etc.) because everything is bundled into one click. This violates the 'specific' and 'informed' consent principles under the Open Finance Regulation and PDPL. Rashid flags it: consent must be for specific data and actions, not blanket access. If a customer later disputes that they authorised access to a particular scope, FinSmart has no evidence of specific, informed consent. The CBUAE could require a consent redesign and fine FinSmart for non-compliant consent flows.",
+        learningPoint: "Bundling all data scopes into a single 'Allow All' button violates the 'specific' and 'informed' consent principles — customers must understand and individually authorise each data scope they grant access to.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_scope: {
+        type: "consequence",
+        tone: "positive",
+        text: "You insist on scope-by-scope consent. Each data scope — accounts:read, transactions:read, payments:write — is presented clearly with its purpose. The customer approves or denies each one individually. This satisfies the 'explicit, informed, specific' consent principles: the customer knows exactly what they're sharing, with whom, and for what purpose. The consent dashboard shows each granted scope and allows individual revocation. Conversion may be slightly lower due to more steps, but the consent is defensible and compliant. Aisha frames the transparency as a trust-building feature, not friction.",
+        learningPoint: "Scope-by-scope consent ensures each data type is explicitly and individually authorised — satisfying the 'explicit, informed, specific' principles and building customer trust through transparency about what data is accessed and why.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_default: {
+        type: "consequence",
+        tone: "negative",
+        text: "You ship 'Allow All' with minimal default scopes. But 'Allow All' still bundles multiple scopes into one click — even if some are pre-selected, the customer authorising them all at once doesn't understand each individual scope. Pre-checking 'recommended' scopes also risks violating the principle that consent must be active, not passive — the customer should opt in, not opt out. Rashid identifies the issue: the bundling and pre-selection pattern doesn't satisfy explicit, specific consent regardless of which scopes are defaulted.",
+        learningPoint: "Pre-selecting scopes and bundling them into one click doesn't satisfy explicit, specific consent — consent must be active (opt-in, not opt-out) and specific (per scope), not bundled or pre-checked.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Consent is not a checkbox — it's a conversation. Each scope must be explicit, informed, and specific.",
+        relatedTopics: ["Consent Management: The Foundation", "What is Open Banking?"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 2 — The UAE Open Finance Framework
+  // ═══════════════════════════════════════════════════
+  {
+    id: "of_m2_difc_shortcut",
+    title: "The DIFC Shortcut",
+    course: "openfinance",
+    module: 2,
+    dilemmaType: "compliance_redflag",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Rashid",
+        text: "A DIFC-registered fintech partner asks to plug directly into FinSmart's onshore Open Finance Licence rather than obtaining its own, to save time. Free zone entities (ADGM, DIFC) are not automatically subject to the onshore Open Finance framework — they must apply for their own Open Finance Licence from the CBUAE to conduct open financial services in onshore UAE. Agree to share the licence, or point them to the correct path?",
+        choices: [
+          { text: "Agree — share FinSmart's licence, the partner operates under it", next: "outcome_share" },
+          { text: "Decline — the partner must apply for its own Open Finance Licence", next: "outcome_decline" },
+          { text: "Agree temporarily — let them operate while they apply", next: "outcome_temp" },
+        ],
+      },
+      outcome_share: {
+        type: "consequence",
+        tone: "negative",
+        text: "You agree to let the DIFC partner operate under FinSmart's licence. An Open Finance Licence is issued to a specific entity — it cannot be shared or sub-licensed. The DIFC entity is conducting open financial services in onshore UAE without its own licence, which is unlicensed activity under the CBUAE framework. Rashid identifies this immediately: if the CBUAE discovers an unlicensed entity operating under another entity's licence, both FinSmart and the partner face enforcement action — potentially licence suspension for FinSmart and penalties for the partner. The shortcut creates regulatory risk for both parties.",
+        learningPoint: "An Open Finance Licence is entity-specific and cannot be shared or sub-licensed — a DIFC entity conducting open financial services in onshore UAE without its own licence is operating illegally, and the licensed entity that enables it faces enforcement.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_decline: {
+        type: "consequence",
+        tone: "positive",
+        text: "You decline and point the partner to the correct path. Free zone entities (ADGM, DIFC) must apply for an Open Finance Licence from the CBUAE to conduct open financial services in onshore UAE. The application requires demonstrating governance, risk management, technical capability, data protection, and capital requirements. Rashid offers to share FinSmart's onboarding experience and documentation templates to help the partner prepare. The relationship is preserved — the partner understands the requirement and begins the application. Both entities operate within their licensed scope, and the CBUAE sees compliant behaviour.",
+        learningPoint: "Free zone entities must apply for their own Open Finance Licence from the CBUAE to conduct open financial services in onshore UAE — pointing them to the correct application path preserves the relationship while maintaining regulatory compliance.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_temp: {
+        type: "consequence",
+        tone: "negative",
+        text: "You agree to let the partner operate temporarily while they apply. But 'temporarily' operating without a licence is still unlicensed activity — there is no grace period for unlicensed Open Finance operations under the CBUAE framework. The partner is conducting regulated activity in onshore UAE without a licence, and FinSmart is facilitating it. If discovered during the application period, the CBUAE could reject the partner's application and sanction FinSmart for enabling unlicensed activity. The 'temporary' framing doesn't change the legal status — it's unlicensed the moment activity begins.",
+        learningPoint: "There is no grace period for unlicensed Open Finance activity — a DIFC entity operating in onshore UAE 'temporarily' before obtaining its licence is conducting unlicensed regulated activity from day one, and facilitating it exposes both parties to enforcement.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "A licence is not a shared resource — each entity operating in onshore UAE needs its own.",
+        relatedTopics: ["Key Stakeholders in the Open Finance Ecosystem", "Phased Implementation and Licensing"],
+      },
+    },
+  },
+  {
+    id: "of_m2_deemed_licensee",
+    title: "The Deemed Licensee Assumption",
+    course: "openfinance",
+    module: 2,
+    dilemmaType: "documentation_process",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A newly onboarded bank partner assumes that because it's a CBUAE-licensed bank, it's automatically approved for live Open Finance activity. Under the Regulation, entities already licensed by the CBUAE (banks, finance companies, PSPs, SVF providers, insurance companies) are deemed to hold an Open Finance Licence — but must still obtain CBUAE approval before conducting Open Finance activities. Is the bank's assumption correct?",
+        choices: [
+          { text: "Yes — being a CBUAE-licensed bank means automatic Open Finance approval", next: "outcome_auto" },
+          { text: "No — deemed licensees must still obtain CBUAE approval before going live", next: "outcome_approve" },
+          { text: "Yes for data sharing, no for payment initiation", next: "outcome_split" },
+        ],
+      },
+      outcome_auto: {
+        type: "consequence",
+        tone: "negative",
+        text: "You accept the bank's assumption and proceed with live Open Finance activity. But deemed licensees — entities already licensed by the CBUAE — are deemed to hold an Open Finance Licence but must still obtain CBUAE approval before conducting Open Finance activities. This approval is subject to meeting governance, control, capital, and insurance requirements. By proceeding without CBUAE approval, the bank is conducting Open Finance activity without the required regulatory sign-off. Rashid catches this during onboarding: the bank hasn't submitted its approval application, and proceeding would expose both the bank and FinSmart to regulatory action.",
+        learningPoint: "Deemed licensees (CBUAE-licensed banks, finance companies, etc.) are deemed to hold an Open Finance Licence but must still obtain CBUAE approval before conducting Open Finance activities — the licence is deemed, but the approval to operate is not automatic.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_approve: {
+        type: "consequence",
+        tone: "positive",
+        text: "You correct the assumption. The bank is a deemed licensee — it holds an Open Finance Licence by virtue of its existing CBUAE licence. But it must still obtain CBUAE approval before conducting Open Finance activities, subject to meeting governance, control, capital, and insurance requirements. Rashid guides the bank through the approval process: submitting governance documentation, risk management frameworks, technical capability evidence, and capital adequacy confirmation. Once the CBUAE grants approval, the bank can go live through the API Hub. The relationship is strong because FinSmart helped the bank navigate the regulatory process correctly.",
+        learningPoint: "Deemed licensees must obtain CBUAE approval before conducting Open Finance activities — the deemed licence eliminates the need for a new licence application, but the approval to operate is a separate regulatory gate subject to governance, control, capital, and insurance requirements.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_split: {
+        type: "consequence",
+        tone: "negative",
+        text: "You create a split rule — deemed licensees can do data sharing automatically but need approval for payment initiation. But the Regulation doesn't distinguish between activity types for the approval requirement — deemed licensees must obtain CBUAE approval before conducting any Open Finance activities, whether data sharing or service initiation. Creating an artificial distinction introduces non-compliance: the bank would be sharing data without the required approval. Rashid corrects the error: the approval requirement applies to all Open Finance activities, not just payments.",
+        learningPoint: "The CBUAE approval requirement for deemed licensees applies to all Open Finance activities — data sharing and service initiation alike — not just payment initiation, and creating artificial distinctions introduces compliance gaps.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Deemed licence ≠ deemed approval — even CBUAE-licensed banks need the green light before going live.",
+        relatedTopics: ["The Open Finance Regulation", "Phased Implementation and Licensing"],
+      },
+    },
+  },
+  {
+    id: "of_m2_direct_integration",
+    title: "The Direct Bank Integration Offer",
+    course: "openfinance",
+    module: 2,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Aisha (Head of Product)", "Sara (Head of Engineering / Security)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A major bank offers FinSmart a faster, direct API integration bypassing the Nebras API Hub 'just for this pilot.' The UAE's framework is built around a centralised API Hub — all participants connect through it, not directly to each other. The Hub provides standardised APIs, centralised governance, a trust framework, and consistent security. Take the shortcut for speed, or insist on going through the Hub?",
+        choices: [
+          { text: "Take the direct integration — faster pilot, migrate to Hub later", next: "outcome_direct" },
+          { text: "Insist on the Hub — the centralised model is the regulatory architecture", next: "outcome_hub" },
+          { text: "Take direct for read-only data, Hub for payments", next: "outcome_split" },
+        ],
+      },
+      outcome_direct: {
+        type: "consequence",
+        tone: "negative",
+        text: "You take the direct integration. But the UAE's Open Finance framework is built around the centralised API Hub — it's not an optional routing choice, it's the regulatory architecture. The Hub provides standardised APIs, participant validation, identity verification, data security, consent management, audit logging, and dispute resolution. By connecting directly, FinSmart bypasses the trust framework, skips centralised consent management and audit logging, and operates outside the regulatory infrastructure. The CBUAE could view this as operating outside the framework, risking FinSmart's licence. The 'pilot' framing doesn't exempt it from the regulatory architecture.",
+        learningPoint: "The centralised API Hub is the regulatory architecture of UAE Open Finance — bypassing it means operating without the trust framework, consent management, and audit logging that the framework mandates, regardless of whether it's a pilot.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_hub: {
+        type: "consequence",
+        tone: "positive",
+        text: "You insist on going through the Hub. The centralised API Hub solves the many-to-many integration problem — FinSmart connects once and can access all LFIs through the Hub, with standardised APIs, centralised governance, the trust framework (mTLS, identity verification), consent management, and audit logging. The pilot is slower because Hub onboarding takes time, but the architecture is correct: every API call is logged, consent is managed centrally, and the trust framework enforces security. The bank's direct offer, while faster, would have created a parallel non-compliant integration path. The Hub path is the right one.",
+        learningPoint: "The centralised API Hub provides standardised APIs, the trust framework, consent management, and audit logging in one connection — insisting on it for all integrations, including pilots, ensures regulatory compliance and security.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_split: {
+        type: "consequence",
+        tone: "negative",
+        text: "You take direct integration for read-only data and Hub for payments. But the Hub isn't just a routing choice for payments — it's the trust framework, consent management, and audit logging infrastructure for all Open Finance activity. Read-only data accessed outside the Hub skips centralised consent recording and audit trails, violating the regulatory requirement that every consent grant, usage, and revocation be logged. The split creates two compliance regimes for the same customer data, which is unworkable and non-compliant.",
+        learningPoint: "The API Hub's trust framework, consent management, and audit logging apply to all Open Finance activity — not just payments — and splitting between direct and Hub connections creates non-compliant gaps in consent recording and audit trails.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "The Hub is the architecture, not a suggestion — every connection goes through it.",
+        relatedTopics: ["The Centralised API Hub and Nebras", "The Open Finance Regulation"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 3 — Technical Standards & APIs
+  // ═══════════════════════════════════════════════════
+  {
+    id: "of_m3_mtls_skip",
+    title: "The mTLS Skip for Testing",
+    course: "openfinance",
+    module: 3,
+    dilemmaType: "stakeholder_pressure",
+    characters: ["Sara (Head of Engineering / Security)", "Aisha (Head of Product)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Sara",
+        text: "A demo deadline is looming and an engineer suggests disabling mutual TLS (mTLS) in the sandbox-to-near-production environment temporarily 'just for this demo.' mTLS — where both client and server authenticate each other using X.509 certificates — is a core FAPI requirement and a trust framework mandate. Approve the temporary mTLS skip?",
+        choices: [
+          { text: "Approve — it's just a demo, re-enable mTLS afterward", next: "outcome_approve" },
+          { text: "Decline — mTLS must be enforced in all environments including demos", next: "outcome_decline" },
+          { text: "Approve but use mock data instead of real customer data", next: "outcome_mock" },
+        ],
+      },
+      outcome_approve: {
+        type: "consequence",
+        tone: "negative",
+        text: "You approve the mTLS skip for the demo. Without mTLS, the environment has only one-way TLS — the client doesn't authenticate to the server. If the demo environment is connected to any real infrastructure (even partially), an attacker could impersonate a client and access API endpoints without a certificate. More dangerously, the 'temporary' skip creates a precedent: engineers may leave mTLS disabled in other environments for convenience, or the demo configuration could accidentally propagate to production. Sara's security team catches the configuration drift and blocks the demo — the environment is non-compliant with FAPI and the trust framework.",
+        learningPoint: "Disabling mTLS even temporarily creates security exposure — without mutual certificate authentication, clients cannot be verified, and 'temporary' configuration changes create risk of drift to production environments.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_decline: {
+        type: "consequence",
+        tone: "positive",
+        text: "You decline. mTLS — mutual authentication using X.509 certificates — is a FAPI requirement and a trust framework mandate for all API Hub connections. It ensures both the client and server are authenticated, preventing impersonation and token theft. Even in a demo environment, mTLS must be enforced: the demo should demonstrate the production-grade security architecture, not a degraded version. Sara works with the engineer to resolve the certificate issue causing the delay (expired test certificate) rather than disabling the security control. The demo launches slightly late but with full mTLS enforcement, showcasing the correct security posture.",
+        learningPoint: "mTLS is a FAPI and trust framework requirement that must be enforced in all environments — resolving the underlying certificate issue is the correct response to a deadline, not disabling the security control.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_mock: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You approve the skip but switch to mock data. This is safer — no real customer data is exposed — but mTLS isn't just about protecting customer data; it's about authenticating clients to the server. Without mTLS, the demo environment doesn't represent the production security architecture, and if the demo is used to showcase FinSmart's security posture to partners or the CBUAE, it misrepresents the actual implementation. Sara notes that even with mock data, disabling mTLS in a near-production environment creates configuration drift risk and sets a poor precedent for the engineering team.",
+        learningPoint: "Using mock data reduces data exposure risk but doesn't justify disabling mTLS — the security control authenticates clients to servers regardless of data content, and near-production environments should reflect production security architecture.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Security controls aren't optional in demos — they're the architecture you're showcasing.",
+        relatedTopics: ["FAPI: Financial-Grade API Security", "OAuth 2.0 and OpenID Connect"],
+      },
+    },
+  },
+  {
+    id: "of_m3_fapi_version",
+    title: "The FAPI 1.0 vs 2.0 Question",
+    course: "openfinance",
+    module: 3,
+    dilemmaType: "accounting_judgment",
+    characters: ["Sara (Head of Engineering / Security)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Sara",
+        text: "Sara must decide which FAPI version to target for a new integration. FAPI 1.0 is the current baseline used in UK Open Banking and other jurisdictions. FAPI 2.0 is the next generation — currently being finalised — which simplifies profiles, improves security, and adds better support for emerging use cases. What factors should actually drive this decision?",
+        choices: [
+          { text: "Target FAPI 2.0 — it's newer, so it must be better", next: "outcome_newer" },
+          { text: "Assess the CBUAE's published standards, certification availability, and ecosystem maturity", next: "outcome_assess" },
+          { text: "Target FAPI 1.0 — never use a standard that isn't finalised", next: "outcome_baseline" },
+        ],
+      },
+      outcome_newer: {
+        type: "consequence",
+        tone: "negative",
+        text: "You target FAPI 2.0 because it's newer. But FAPI 2.0 is still being finalised — its specifications may change, certification programmes may not yet be available, and the CBUAE's published Open Finance Standards may reference FAPI 1.0 profiles. Building against an unfinalised standard means the integration could break when the specification changes, and there may be no certification path to demonstrate compliance. The UAE's trust framework enforces FAPI security profiles — if those profiles reference FAPI 1.0, targeting 2.0 creates a compliance gap. Sara's team spends weeks building against a moving target.",
+        learningPoint: "Targeting a newer FAPI version solely because it's newer ignores critical factors — the CBUAE's published standards, certification availability, and ecosystem maturity must drive the decision, not the version number.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_assess: {
+        type: "consequence",
+        tone: "positive",
+        text: "You assess the full picture. The CBUAE publishes Open Finance Standards that define which FAPI profiles are mandated — Sara checks these first. She also assesses certification availability through the OpenID Foundation, ecosystem maturity (do LFIs and the Hub support the target version?), and migration implications. If the CBUAE standards reference FAPI 1.0 and certification is available, targeting 1.0 is correct. If 2.0 is referenced and certification exists, 2.0 is appropriate. If 2.0 is still being finalised, she targets 1.0 now with a documented plan to migrate when 2.0 is finalised and mandated. The decision is driven by regulatory requirements, not novelty.",
+        learningPoint: "The FAPI version decision should be driven by the CBUAE's published standards, certification availability through the OpenID Foundation, ecosystem support, and migration planning — not by which version is newest.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_baseline: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You target FAPI 1.0 and refuse to consider 2.0 until it's fully finalised. This is safe — FAPI 1.0 is the established baseline with certification programmes and ecosystem support. But if the CBUAE's standards already reference FAPI 2.0 profiles (or plan to), targeting only 1.0 could create a future compliance gap requiring migration. Sara's approach is defensible but potentially short-sighted if the regulator is already moving to 2.0. A better approach would be to target 1.0 now while monitoring 2.0's finalisation and the CBUAE's standards updates.",
+        learningPoint: "Defaulting to FAPI 1.0 as the established baseline is safe, but the decision should also consider whether the CBUAE's standards are moving toward 2.0 — a purely conservative approach may create future migration obligations.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Newer isn't automatically better — match the regulator's standards, certification paths, and ecosystem support.",
+        relatedTopics: ["FAPI: Financial-Grade API Security", "OAuth 2.0 and OpenID Connect"],
+      },
+    },
+  },
+  {
+    id: "of_m3_sender_constrained_bug",
+    title: "The Non-Sender-Constrained Token Bug",
+    course: "openfinance",
+    module: 3,
+    dilemmaType: "compliance_redflag",
+    characters: ["Sara (Head of Engineering / Security)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Sara",
+        text: "A security review finds that some issued access tokens aren't properly sender-constrained — meaning a stolen token could be replayed by a different client. Under FAPI, sender-constrained tokens are bound to the specific client that requested them (via mTLS certificate or proof-of-possession key), so even if intercepted, they can't be used by another client. Patch immediately and disclose, or quietly fix in the next release cycle?",
+        choices: [
+          { text: "Quietly fix in the next release cycle — it's a minor issue", next: "outcome_quiet" },
+          { text: "Patch immediately and disclose to the CBUAE and affected parties", next: "outcome_disclose" },
+          { text: "Patch immediately but don't disclose — it was caught internally", next: "outcome_patch" },
+        ],
+      },
+      outcome_quiet: {
+        type: "consequence",
+        tone: "negative",
+        text: "You quietly schedule the fix for the next release. But non-sender-constrained tokens are a FAPI security requirement — a stolen token can be replayed by any client, enabling impersonation and unauthorised API access. During the window before the fix, if tokens are stolen (e.g., through a logging misconfiguration or phishing), they can be used by attackers. If the CBUAE later discovers that a known security vulnerability was identified but not promptly remediated or disclosed, FinSmart faces licence suspension risk. The deliberate delay transforms a technical issue into a compliance and governance failure.",
+        learningPoint: "A FAPI non-sender-constrained token vulnerability is a security defect that enables token theft and replay — delaying remediation and failing to disclose transforms a technical issue into a regulatory governance failure.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_disclose: {
+        type: "consequence",
+        tone: "positive",
+        text: "You patch immediately and disclose. Sara's team fixes the token constraint issue in an emergency patch, binding all issued tokens to the requesting client via mTLS certificate. Rashid notifies the CBUAE and affected LFIs, documenting the vulnerability, the remediation, and the impact assessment. Under the UAE PDPL and Open Finance Regulation, the CBUAE must be notified of significant incidents, and affected customers must be informed if their data was compromised. The prompt disclosure demonstrates strong incident response governance — the CBUAE views FinSmart's handling as exemplary, and the trust framework's audit logs confirm no tokens were actually stolen during the window.",
+        learningPoint: "Patching a FAPI token security vulnerability immediately and disclosing to the CBUAE and affected parties demonstrates strong incident response governance — under UAE regulations, significant security incidents must be notified promptly.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_patch: {
+        type: "consequence",
+        tone: "negative",
+        text: "You patch immediately but don't disclose. While the fix is correct, the non-disclosure violates the UAE PDPL and Open Finance Regulation — the CBUAE must be notified of significant security incidents. A non-sender-constrained token vulnerability is a security incident: tokens could have been stolen and replayed during the window. By not disclosing, FinSmart withholds information the regulator is entitled to. If the CBUAE later discovers the incident (e.g., through an audit), the non-disclosure is treated more seriously than the vulnerability itself — it demonstrates a pattern of hiding issues rather than transparent governance.",
+        learningPoint: "Patching a security vulnerability without disclosing it to the CBUAE violates UAE incident notification requirements — non-disclosure is treated as a governance failure more serious than the vulnerability itself.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Security incidents don't disappear when you fix them — disclosure is part of the fix.",
+        relatedTopics: ["FAPI: Financial-Grade API Security", "Incident Response and Breach Notification"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 4 — Security, Consent & Data Protection
+  // ═══════════════════════════════════════════════════
+  {
+    id: "of_m4_sensitive_data",
+    title: "The Sensitive Data Request",
+    course: "openfinance",
+    module: 4,
+    dilemmaType: "compliance_redflag",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A lending partner wants FinSmart to request a data scope that would surface health-related transaction categories to improve credit risk models — and the customer would be willing to consent. Under the UAE Open Finance Regulation, data sharing providers must not process 'sensitive data' for the provision of data sharing, even with the explicit consent of the user. Is this request permissible?",
+        choices: [
+          { text: "Yes — if the customer explicitly consents, sensitive data can be shared", next: "outcome_consent" },
+          { text: "No — the regulation prohibits sensitive data sharing even with consent", next: "outcome_prohibit" },
+          { text: "Yes — but only if the data is anonymised before sharing", next: "outcome_anon" },
+        ],
+      },
+      outcome_consent: {
+        type: "consequence",
+        tone: "negative",
+        text: "You agree to share the data with explicit customer consent. But the UAE Open Finance Regulation is explicit: data sharing providers must not process sensitive data for the provision of data sharing, even with the explicit consent of the user. This is a key consumer protection — certain categories of sensitive data are excluded from Open Finance data sharing entirely. Customer consent does not override this prohibition. By processing health-related transaction data, FinSmart violates the regulation regardless of consent. Rashid blocks the integration: the request is impermissible, and proceeding would expose FinSmart to regulatory enforcement and licence risk.",
+        learningPoint: "The UAE Open Finance Regulation prohibits processing sensitive data for data sharing provision even with explicit customer consent — the prohibition is absolute, and consent does not override it.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_prohibit: {
+        type: "consequence",
+        tone: "positive",
+        text: "You decline the request. The UAE Open Finance Regulation explicitly states that data sharing providers must not process sensitive data for the provision of data sharing, even with the explicit consent of the user. This is a key consumer protection — health-related data, along with other sensitive categories, is excluded from Open Finance data sharing entirely. Rashid documents the regulatory basis for the refusal and communicates it clearly to the lending partner. The partner redirects its credit risk model to use permitted transaction data (income patterns, spending categories, debt obligations) without surfacing sensitive health-related information.",
+        learningPoint: "The UAE Open Finance Regulation's sensitive data prohibition is absolute — even with explicit customer consent, sensitive data cannot be processed for data sharing, and this protection cannot be contracted around.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_anon: {
+        type: "consequence",
+        tone: "negative",
+        text: "You agree to share anonymised sensitive data. But the regulation prohibits processing sensitive data for data sharing — anonymisation doesn't change the classification if the underlying data is sensitive. Additionally, 'anonymised' health-related transaction data may still be re-identifiable through transaction pattern analysis, especially when combined with other financial data. The lending partner's stated purpose — improving credit risk models — requires the data to be attributable to the individual, which undermines the anonymisation claim. Rashid identifies that this approach attempts to circumvent the prohibition through a technical workaround that doesn't change the regulatory status.",
+        learningPoint: "Anonymising sensitive data doesn't circumvent the Open Finance Regulation's prohibition — if the underlying data is sensitive, processing it for data sharing is prohibited regardless of whether it's anonymised, especially when the stated purpose requires individual attribution.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Some data is off-limits by design — the regulation protects customers even from their own consent.",
+        relatedTopics: ["Consent Management: The Foundation", "Data Protection in the UAE (PDPL)"],
+      },
+    },
+  },
+  {
+    id: "of_m4_consent_fatigue",
+    title: "The Consent Fatigue Fix",
+    course: "openfinance",
+    module: 4,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "Product wants to cut the number of consent screens by pre-checking recommended scopes to reduce drop-off. Consent in Open Finance must be explicit, informed, specific, time-limited, and revocable — the customer must actively approve, not passively accept. Does pre-checking recommended scopes respect the 'explicit, not passive' consent principle?",
+        choices: [
+          { text: "Yes — pre-checking is fine, the customer can uncheck what they don't want", next: "outcome_precheck" },
+          { text: "No — consent must be active opt-in, not pre-checked opt-out", next: "outcome_optin" },
+          { text: "Yes — but only for low-risk scopes like account balances", next: "outcome_lowrisk" },
+        ],
+      },
+      outcome_precheck: {
+        type: "consequence",
+        tone: "negative",
+        text: "You pre-check recommended scopes. But pre-checking means the customer passively accepts by clicking 'Continue' — they haven't actively chosen each scope. This violates the 'explicit' consent principle: consent must be the customer's active, deliberate authorisation, not a default they accept by inertia. Consent fatigue — customers approving without reading because there are too many prompts — is a recognised fraud risk. Pre-checking scopes amplifies this risk: customers grant access to data they didn't intend to share, and if a malicious TPP exploits the pattern, the customer may not realise what they authorised. Rashid blocks the design as non-compliant.",
+        learningPoint: "Pre-checking recommended consent scopes violates the 'explicit, not passive' consent principle — consent must be active opt-in per scope, not a pre-checked default accepted by inertia, and pre-checking amplifies consent fatigue risk.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_optin: {
+        type: "consequence",
+        tone: "positive",
+        text: "You require active opt-in for each scope. Each data scope — accounts:read, transactions:read, payments:write — is unchecked by default, and the customer must actively select each one they want to grant. This satisfies the 'explicit' principle: every granted scope is a deliberate, informed choice. The consent dashboard shows each active consent with clear descriptions, and customers can revoke any scope individually at any time. Aisha addresses the drop-off concern by improving the consent UX — clearer explanations, progressive disclosure, and contextual justification for each scope — rather than pre-checking. Conversion stays healthy because customers understand what they're sharing and why.",
+        learningPoint: "Active opt-in for each consent scope satisfies the 'explicit' principle — addressing drop-off through better UX (clearer explanations, contextual justification) rather than pre-checking maintains both conversion and compliance.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_lowrisk: {
+        type: "consequence",
+        tone: "negative",
+        text: "You pre-check 'low-risk' scopes like account balances. But the Open Finance Regulation doesn't distinguish between high-risk and low-risk scopes for the consent principle — all consent must be explicit, informed, specific, and active. Account balance data is still customer financial data protected under the regulation and PDPL. Pre-checking any scope, regardless of perceived risk, creates a passive acceptance pattern that violates the explicit consent principle. Additionally, what product considers 'low-risk' may still be sensitive in context — an account balance reveals financial status that could be misused. Rashid rejects the risk-tiered approach as non-compliant.",
+        learningPoint: "The Open Finance Regulation doesn't tier consent requirements by perceived data risk — all scopes require explicit, active opt-in, and pre-checking 'low-risk' scopes still violates the explicit consent principle.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Consent must be a choice, not a default — pre-checking is passive acceptance, not explicit authorisation.",
+        relatedTopics: ["Consent Management: The Foundation", "Fraud Prevention and Risk Management"],
+      },
+    },
+  },
+  {
+    id: "of_m4_quiet_breach",
+    title: "The Quiet Breach",
+    course: "openfinance",
+    module: 4,
+    dilemmaType: "stakeholder_pressure",
+    characters: ["Sara (Head of Engineering / Security)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Sara",
+        text: "A minor incident is discovered — a small number of access tokens were exposed briefly due to a logging misconfiguration, now fixed. It feels below what constitutes a 'big' breach. Under the UAE PDPL and Open Finance Regulation, the CBUAE must be notified of significant incidents, and affected customers must be informed if their data was compromised. Report to the CBUAE anyway, or treat as internal-only since it was caught fast?",
+        choices: [
+          { text: "Treat as internal-only — it was caught fast and the exposure was brief", next: "outcome_internal" },
+          { text: "Report to the CBUAE — transparency is mandatory regardless of size", next: "outcome_report" },
+          { text: "Wait and see — report only if customers complain or issues arise", next: "outcome_wait" },
+        ],
+      },
+      outcome_internal: {
+        type: "consequence",
+        tone: "negative",
+        text: "You treat it as internal-only. But the UAE PDPL and Open Finance Regulation require notifying the CBUAE of significant incidents — and 'significant' is not defined by whether the incident feels 'big.' Exposed access tokens, even briefly, could have been captured and replayed if they weren't sender-constrained. If the CBUAE later discovers the incident through an audit or a customer complaint, the non-disclosure is treated as a governance failure more serious than the incident itself. Rashid escalates: the decision to withhold notification is a regulatory breach, and Sara's security team must document why the incident was initially classified as non-reportable.",
+        learningPoint: "Under UAE regulations, the CBUAE must be notified of significant incidents — the significance threshold is not subjective, and exposed access tokens constitute a potential security incident requiring notification regardless of perceived severity or speed of remediation.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_report: {
+        type: "consequence",
+        tone: "positive",
+        text: "You report to the CBUAE. Rashid documents the incident: a logging misconfiguration exposed a small number of access tokens briefly; the misconfiguration was identified and fixed; the trust framework's audit logs are being reviewed to determine if any tokens were actually accessed; affected customers (if any) will be notified. The CBUAE reviews the report and acknowledges the prompt notification. The trust framework enables instant token revocation for any compromised tokens, and the Hub's centralised logs confirm no unauthorised API calls were made during the exposure window. The transparent handling demonstrates strong incident response governance.",
+        learningPoint: "Reporting incidents to the CBUAE promptly — documenting the cause, remediation, and impact assessment — demonstrates strong incident response governance, and the trust framework enables rapid token revocation and forensic verification.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_wait: {
+        type: "consequence",
+        tone: "negative",
+        text: "You wait to see if customers complain. But the UAE PDPL and Open Finance Regulation require proactive notification — waiting for customer complaints before reporting is a reactive posture that violates the regulatory requirement. If tokens were captured during the exposure window, the damage may already be done by the time complaints arrive. The CBUAE views 'wait and see' as a deliberate withholding of incident information — a governance failure that compounds the original security issue. Sara's team should have assessed the incident immediately and notified Rashid for regulatory disclosure, not waited for external signals.",
+        learningPoint: "Waiting for customer complaints before reporting an incident to the CBUAE violates the proactive notification requirement — the regulation expects immediate assessment and disclosure, not a reactive posture based on external signals.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "There's no 'too small to report' threshold — transparency is the default, not the last resort.",
+        relatedTopics: ["Incident Response and Breach Notification", "Fraud Prevention and Risk Management"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 5 — Use Cases, Business Models & Capstone
+  // ═══════════════════════════════════════════════════
+  {
+    id: "of_m5_credit_bureau_bypass",
+    title: "The Credit Bureau Bypass",
+    course: "openfinance",
+    module: 5,
+    dilemmaType: "accounting_judgment",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A lending feature could technically make credit decisions purely off aggregated Open Finance transaction data without referencing the Al Etihad Credit Bureau score at all. Open Finance enables alternative credit scoring using real-time transaction data — income patterns, spending, and debt obligations — complementing the credit bureau. Should FinSmart bypass the credit bureau entirely because it's faster?",
+        choices: [
+          { text: "Yes — Open Finance data is sufficient, skip the bureau for speed", next: "outcome_bypass" },
+          { text: "No — use Open Finance data to complement, not replace, the bureau score", next: "outcome_complement" },
+          { text: "Yes for small loans, use bureau for larger ones", next: "outcome_tiered" },
+        ],
+      },
+      outcome_bypass: {
+        type: "consequence",
+        tone: "negative",
+        text: "You bypass the credit bureau entirely. But the Al Etihad Credit Bureau provides a standardised, regulated credit score that incorporates data FinSmart can't see — historical defaults, cross-institutional credit behaviour, and public records. Open Finance transaction data is powerful for real-time affordability assessment and income verification, but it doesn't capture the full credit picture. Bypassing the bureau means FinSmart's credit decisions are based on a partial view, increasing default risk. Additionally, UAE lending regulations may require credit bureau checks for certain loan types — Rashid flags that bypassing the bureau could violate responsible lending requirements and CBUAE lending standards.",
+        learningPoint: "Open Finance transaction data enables alternative credit scoring but doesn't replace the Al Etihad Credit Bureau — the bureau provides historical, cross-institutional credit data that transaction data alone cannot capture, and bypassing it increases default risk and regulatory exposure.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_complement: {
+        type: "consequence",
+        tone: "positive",
+        text: "You use Open Finance data to complement the bureau score. FinSmart's lending model pulls the Al Etihad Credit Bureau score as the baseline credit assessment, then enriches it with Open Finance transaction data: real-time income verification, spending patterns, debt obligations across accounts, and affordability assessment. This combination is more accurate than either source alone — the bureau provides historical credit behaviour, while Open Finance provides current financial health. New UAE residents without a long local credit history benefit most: transaction data fills the gap the bureau can't see. Rashid confirms this approach satisfies responsible lending requirements while leveraging Open Finance's strengths.",
+        learningPoint: "Open Finance transaction data should complement the credit bureau score — the bureau provides historical credit behaviour, Open Finance provides real-time financial health, and together they enable more accurate, inclusive credit decisions.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_tiered: {
+        type: "consequence",
+        tone: "negative",
+        text: "You bypass the bureau for small loans and use it for larger ones. But responsible lending obligations apply to all loan sizes — a small loan made without a credit bureau check can still lead to over-indebtedness if the customer has undisclosed defaults elsewhere. Tiering the bureau requirement by loan size creates a compliance gap: small loans are held to a lower standard than large ones, which is not defensible under UAE lending regulations. The CBUAE's responsible lending framework expects consistent credit assessment regardless of loan size. Rashid rejects the tiered approach — if the bureau is required, it's required for all lending.",
+        learningPoint: "Tiering credit bureau requirements by loan size is not defensible under responsible lending — if credit assessment is required, it applies to all lending regardless of amount, and Open Finance data should complement, not selectively replace, the bureau.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Open Finance enriches credit decisions — it doesn't replace the systems that already work.",
+        relatedTopics: ["Account Aggregation and Personal Finance Management", "Lending, BNPL, and Alternative Credit"],
+      },
+    },
+  },
+  {
+    id: "of_m5_cross_sector_consent",
+    title: "The Cross-Sector Consent Bundle",
+    course: "openfinance",
+    module: 5,
+    dilemmaType: "documentation_process",
+    characters: ["Aisha (Head of Product)", "Rashid (Compliance & Regulatory Affairs Lead)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A wealth product wants to request banking, insurance, and investment data access all under a single consent flow marketed as 'connect once.' The UAE Open Finance framework covers banking and insurance, and cross-sector data sharing requires clear consent for each sector. Does bundling banking, insurance, and investment data under one consent satisfy the requirement for clear consent per sector?",
+        choices: [
+          { text: "Yes — 'connect once' is convenient and the customer sees all sectors", next: "outcome_bundle" },
+          { text: "No — each sector requires separate, clear consent", next: "outcome_separate" },
+          { text: "Yes — if the customer can see which sectors are included", next: "outcome_transparent" },
+        ],
+      },
+      outcome_bundle: {
+        type: "consequence",
+        tone: "negative",
+        text: "You bundle all sectors under one consent. But cross-sector data sharing requires clear consent for each sector — banking, insurance, and investment data are different categories with different regulatory implications. A single 'connect once' consent doesn't allow the customer to grant banking access while declining insurance, or vice versa. The customer may want to share investment data with a wealth platform but not insurance data. Bundling eliminates that granularity, violating the 'specific' consent principle. Additionally, different regulators may be involved — the CBUAE for banking, the SCA for securities, and free zone regulators for DIFC/ADGM entities — and a single bundled consent doesn't address the multi-regulator dimension.",
+        learningPoint: "Cross-sector data sharing requires clear, separate consent for each sector — banking, insurance, and investment data have different regulatory implications, and a single bundled 'connect once' consent eliminates the granularity that the 'specific' consent principle requires.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_separate: {
+        type: "consequence",
+        tone: "positive",
+        text: "You require separate consent for each sector. The wealth product's onboarding flow presents three distinct consent steps: banking data access (account balances, transactions), insurance data access (policy details, coverage), and investment data access (portfolio, holdings). The customer can grant all three or selectively decline any sector. Each consent is specific, informed, and separately revocable through the consent dashboard. Rashid documents the multi-regulator dimension: the CBUAE for banking and insurance, potentially the SCA for securities, and the approach addresses each regulator's consent requirements. The 'connect once' marketing is adjusted to 'connect each sector once' — accurate and compliant.",
+        learningPoint: "Separate consent per sector satisfies the 'specific' principle for cross-sector data sharing — each sector (banking, insurance, investment) has different regulatory implications and requires its own clear, informed, and revocable consent.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_transparent: {
+        type: "consequence",
+        tone: "negative",
+        text: "You bundle the sectors but make it transparent which are included. But transparency about what's bundled doesn't change the fact that the customer can't selectively decline a sector. If the customer must accept all three sectors to use the wealth product, the consent for each sector isn't truly voluntary — it's coerced by the product requirement. The 'specific' consent principle requires that each data scope is individually authorisable, not just individually visible. Rashid identifies that transparency without granularity is insufficient — the customer needs the ability to opt out of specific sectors, not just see what they're opting into.",
+        learningPoint: "Transparency about bundled sectors is insufficient — the 'specific' consent principle requires that each sector is individually authorisable and declinable, not just visible within a bundle that must be accepted as a whole.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Cross-sector means cross-consent — each data category needs its own clear, separate authorisation.",
+        relatedTopics: ["Consent Management: The Foundation", "Open Insurance and Wealth Management"],
+      },
+    },
+  },
+  {
+    id: "of_m5_aani_partnership",
+    title: "The Aani Partnership Pressure",
+    course: "openfinance",
+    module: 5,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Aisha (Head of Product)", "Sara (Head of Engineering / Security)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Aisha",
+        text: "A rushed opportunity to integrate with Aani — the UAE's instant payment platform operated by Al Etihad Payments — arrives with a tight partner deadline. Meeting the deadline would mean skipping a planned round of fraud-monitoring testing. Aani enables 24/7 real-time transfers via proxy payments up to AED 50,000 per transaction. Take the deal on schedule, or delay for testing?",
+        choices: [
+          { text: "Take the deal — launch on schedule, add fraud monitoring post-launch", next: "outcome_take" },
+          { text: "Delay for testing — fraud monitoring must be validated before launch", next: "outcome_delay" },
+          { text: "Launch with reduced transaction limits until testing is complete", next: "outcome_limit" },
+        ],
+      },
+      outcome_take: {
+        type: "consequence",
+        tone: "negative",
+        text: "You launch on schedule without fraud monitoring testing. Aani processes real-time transfers up to AED 50,000 per transaction, 24/7. Without validated fraud monitoring, FinSmart has no real-time detection of suspicious payment patterns — unusual transaction amounts, rapid successive transfers, or anomalous beneficiary patterns go unflagged. If fraud occurs during the unmonitored window, FinSmart bears the loss and the reputational damage. Sara's security team identifies the gap immediately after launch: the fraud monitoring integration exists but wasn't tested against Aani's transaction patterns. Emergency testing is conducted, but the launch window already exposed FinSmart and its customers to unmonitored payment risk.",
+        learningPoint: "Launching a payment integration without validated fraud monitoring exposes the platform to undetected suspicious transaction patterns — Aani's AED 50,000 per-transaction limit and 24/7 real-time processing make fraud monitoring essential before launch, not after.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_delay: {
+        type: "consequence",
+        tone: "positive",
+        text: "You delay for fraud monitoring testing. Sara's team validates the fraud detection rules against Aani's transaction patterns: proxy payment anomalies, rapid successive transfers, unusual amounts, and beneficiary pattern analysis. The testing identifies two false-positive scenarios that would have blocked legitimate payments, which are tuned before launch. The Aani integration launches two weeks late, but fraud monitoring is fully operational — every transaction is screened in real time, suspicious patterns trigger alerts, and the trust framework's audit logs capture everything. Aisha communicates the delay to the partner as a security-first decision, and the partner respects the disciplined approach.",
+        learningPoint: "Validating fraud monitoring before launching a payment integration is essential — testing identifies false positives that would block legitimate payments and ensures real-time detection of suspicious patterns before any real transactions flow.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_limit: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You launch with reduced transaction limits (e.g., AED 5,000 instead of AED 50,000) until testing is complete. This reduces the risk surface — lower-value transactions are less attractive to fraudsters and limit potential losses. But Aani's value proposition includes instant transfers up to AED 50,000, and capping at AED 5,000 undermines the product experience for legitimate users who need higher-value transfers. Sara notes this is a reasonable compromise — it allows launch on schedule while bounding risk — but it's a temporary measure that must be explicitly communicated to users and lifted promptly once testing validates the fraud monitoring. The reduced limit should have a defined end date, not drift indefinitely.",
+        learningPoint: "Launching with reduced transaction limits is a reasonable interim measure that bounds fraud risk while allowing launch — but it must be temporary, communicated to users, and lifted promptly once fraud monitoring is validated.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Real-time payments need real-time protection — test the safety nets before you open the floodgates.",
+        relatedTopics: ["The Aani Instant Payment Platform", "Payment Initiation and Embedded Finance"],
+      },
+    },
+  },
+];

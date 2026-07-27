@@ -1,0 +1,730 @@
+// IFRS & Commodity Trading dilemmas.
+// Grounded in the curriculum for modules 1-5 of the ifrs-commodities course.
+// Character cast: Priya (Trader), Daniel (Financial Controller), Farouk (Compliance & Sanctions Officer), Nomsa (CFO).
+
+export const IFRS_DILEMMAS = [
+  // ═══════════════════════════════════════════════════
+  // MODULE 1 — Foundations of Physical Commodity Trading
+  // ═══════════════════════════════════════════════════
+  {
+    id: "ifrs_m1_fob_cif_push",
+    title: "The FOB vs CIF Push",
+    course: "ifrs-commodities",
+    module: 1,
+    dilemmaType: "documentation_process",
+    characters: ["Priya (Trader)", "Daniel (Financial Controller)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Daniel",
+        text: "The Indian buyer's contract says FOB Richards Bay at $96/MT — we recognise revenue at loading. But late in negotiation they asked if we'd 'just handle the freight too, same price.' Priya, if we agree, what does it change for the accounts?",
+        choices: [
+          { text: "Agree informally — handle freight as a favour, keep the contract as FOB", next: "outcome_informal" },
+          { text: "Agree, but amend the contract to CIF so it reflects the real arrangement", next: "outcome_cif" },
+          { text: "Decline the freight addition — stay pure FOB, buyer arranges freight", next: "outcome_fob" },
+        ],
+      },
+      outcome_informal: {
+        type: "consequence",
+        tone: "negative",
+        text: "You agree to handle freight but leave the contract as FOB. Revenue is still recognised at loading per the stated Incoterm, but you're bearing a freight cost that doesn't match the documented terms. When the auditors review the shipping file, they find the B/L says FOB while the seller's accounts show freight expenses — a mismatch between substance and documentation. Daniel has to explain why the commercial arrangement doesn't match the contract, and the audit committee flags it as a control weakness.",
+        learningPoint: "The Incoterm in the contract is strong evidence of when control transfers for revenue recognition — informally changing the commercial arrangement without updating the Incoterm creates a mismatch between documentation and substance that auditors will challenge.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_cif: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You amend the contract to CIF. Now the seller pays freight and insurance to destination. Under CIF, risk still typically passes at loading, so revenue recognition may not change — but Daniel must reassess the control-transfer analysis, and the seller now bears transit risk and insurance obligations that weren't there under FOB. It's honest and properly documented, but the commercial exposure has shifted. The buyer is happy, but Priya's desk now manages freight logistics it didn't before.",
+        learningPoint: "Switching from FOB to CIF changes the seller's risk profile and cost obligations in transit — even if revenue recognition timing stays the same, the Incoterm must be updated to reflect the actual commercial arrangement so the accounting analysis is correct.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_fob: {
+        type: "consequence",
+        tone: "positive",
+        text: "You keep it clean FOB. The seller's obligation is to load the coal onto the vessel at Richards Bay — risk and control transfer when goods are on board, and revenue is recognised at the B/L date. The buyer arranges and pays freight. Daniel has a clear, unambiguous revenue recognition point with no mismatch between documentation and substance. The deal closes at $96/MT FOB with no freight complications.",
+        learningPoint: "A clean FOB arrangement means revenue is recognised at the loading port when goods are on board, with no ambiguity about control transfer — the Incoterm, the documentation, and the commercial substance all align.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "The Incoterm you choose doesn't just set who pays freight — it signals when control transfers, which drives revenue recognition under IFRS 15.",
+        relatedTopics: ["Incoterms in Commodity Trade", "IFRS 15 — Revenue from Contracts with Customers"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m1_missing_assay",
+    title: "The Missing Assay",
+    course: "ifrs-commodities",
+    module: 1,
+    dilemmaType: "documentation_process",
+    characters: ["Priya (Trader)", "Daniel (Financial Controller)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "The cargo is loaded and the B/L is issued, but the independent quality certificate (assay) from SGS hasn't come back yet. The buyer's bank wants documents presented against the LC today to trigger payment. Under a documentary credit, the bank pays against conforming documents — not against the goods. Present now without the assay, or wait?",
+        choices: [
+          { text: "Present now — the B/L and other docs are ready, the assay can follow", next: "outcome_present" },
+          { text: "Wait for the assay — present a complete document set", next: "outcome_wait" },
+          { text: "Present now but ask the buyer to waive the assay requirement", next: "outcome_waive" },
+        ],
+      },
+      outcome_present: {
+        type: "consequence",
+        tone: "negative",
+        text: "You present the documents without the assay. The issuing bank finds a discrepancy — the LC required a quality certificate and it's missing. Under a documentary credit, the bank pays against conforming documents, not against the goods. A single missing document delays payment by weeks while the buyer's bank refuses to pay. The cargo is on the water, the seller's cash is tied up, and Priya is chasing the buyer to accept the discrepancy or amend the LC — all because the assay wasn't ready.",
+        learningPoint: "Under a documentary credit, the bank pays against conforming documents — a single missing or discrepant document can delay payment for weeks, regardless of whether the physical cargo is fine.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_wait: {
+        type: "consequence",
+        tone: "positive",
+        text: "You wait for the SGS assay to come back. It confirms the cargo meets specification — calorific value, ash content, sulphur content all within grade. You present a complete, conforming document set: B/L, commercial invoice, certificate of origin, quality certificate, and packing list. The issuing bank pays promptly because every required document is present and accurate. Payment flows within days of presentation.",
+        learningPoint: "The quality certificate (assay) is a critical conforming document under a documentary credit — presenting a complete, accurate document set ensures prompt payment and avoids discrepancy delays.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_waive: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You present without the assay and ask the buyer to waive the requirement. The buyer agrees verbally, but under a documentary credit, the issuing bank makes its own determination — a verbal waiver from the buyer doesn't bind the bank. The bank still flags the discrepancy. The buyer then has to formally instruct the bank to accept the waiver, adding days to the process. It works eventually, but you've created unnecessary friction and ceded negotiating leverage.",
+        learningPoint: "Under a documentary credit, only the issuing bank can waive a document discrepancy — a buyer's verbal assurance is not binding on the bank, so relying on it creates payment risk.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Document accuracy is everything under a documentary credit — the bank pays against documents, not against the goods.",
+        relatedTopics: ["Trade Documentation", "Incoterms in Commodity Trade"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m1_broker_take_title",
+    title: "The Broker Who Wants to Take Title",
+    course: "ifrs-commodities",
+    module: 1,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Priya (Trader)", "Farouk (Compliance & Sanctions Officer)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Farouk",
+        text: "A counterparty presenting itself as a broker — matching buyers and sellers for a commission — is asking to 'briefly hold title to the cargo' to help structure a deal between two parties. Priya, a broker matches buyers and sellers for a fee without taking ownership or price risk. If this entity takes title, even briefly, it's no longer acting as a broker. What do you do?",
+        choices: [
+          { text: "Allow it — it's just briefly, and it helps close the deal faster", next: "outcome_allow" },
+          { text: "Decline — if they take title, they're a trading house, not a broker, and need full onboarding", next: "outcome_decline" },
+          { text: "Allow title transfer but keep treating them as a broker for KYC purposes", next: "outcome_mixed" },
+        ],
+      },
+      outcome_allow: {
+        type: "consequence",
+        tone: "negative",
+        text: "You allow the entity to take title while still treating it as a broker. But a broker that takes title is, by definition, a trading house — it now bears price risk, takes ownership, and must be onboarded with full KYC, UBO checks, sanctions screening, and trade finance documentation. By treating a principal as an intermediary, you've applied the wrong compliance standard. Farouk discovers the gap during a routine review: the entity was never properly onboarded because it was classified as a broker. The transaction is suspended pending remediation.",
+        learningPoint: "A broker that takes title to a cargo is no longer a broker — it is a trading house bearing price risk, and must be onboarded with full KYC, UBO identification, and sanctions screening, not the lighter broker-level checks.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_decline: {
+        type: "consequence",
+        tone: "positive",
+        text: "You decline. If the entity takes title, it's acting as a trading house — it must go through full onboarding: corporate registration, UBO chart, sanctions screening against OFAC/EU/UN lists, source-of-funds verification, and trade finance documentation. Farouk initiates the full KYC process. The deal takes longer, but the compliance posture is correct — you know exactly who you're dealing with, who ultimately owns the entity, and whether they're sanctioned.",
+        learningPoint: "The distinction between a broker (matches deals for a fee, no title, no risk) and a trading house (takes title, bears price risk) determines the level of KYC, sanctions screening, and due diligence required — getting the classification wrong creates a compliance gap.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_mixed: {
+        type: "consequence",
+        tone: "negative",
+        text: "You allow title transfer but keep the broker-level KYC file. The entity is now a principal in the trade — bearing price risk and taking ownership — but was only screened with lighter broker-level checks. If the entity has a sanctioned UBO or an opaque ownership structure, you wouldn't know because you never ran the full screen. This is a textbook AML/sanctions control failure — the compliance treatment didn't match the actual role in the transaction.",
+        learningPoint: "The level of due diligence must match the entity's actual role in the transaction — a principal taking title and bearing risk requires full KYC and sanctions screening, regardless of how it was initially classified.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Know who you're really dealing with — the role a counterparty plays in a trade determines the compliance standard that applies.",
+        relatedTopics: ["Key Players in the Supply Chain", "Sanctions, Due Diligence & Compliance"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 2 — African Coal & Sulphur Markets
+  // ═══════════════════════════════════════════════════
+  {
+    id: "ifrs_m2_eskom_introduction",
+    title: "The Eskom Introduction",
+    course: "ifrs-commodities",
+    module: 2,
+    dilemmaType: "compliance_redflag",
+    characters: ["Priya (Trader)", "Farouk (Compliance & Sanctions Officer)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "A well-connected intermediary offers to 'smooth' a coal supply deal with Eskom — South Africa's state-owned power utility and the largest domestic coal consumer — for a success fee contingent on the deal closing. Eskom is a state-owned entity, so dealings carry heightened PEP and anti-corruption obligations. Take the introduction?",
+        choices: [
+          { text: "Take the introduction — the success fee is standard for intermediaries", next: "outcome_take" },
+          { text: "Decline — a success fee contingent on a state-owned entity deal is a corruption red flag", next: "outcome_decline" },
+          { text: "Take the introduction but insist the fee is paid regardless of deal outcome", next: "outcome_flat" },
+        ],
+      },
+      outcome_take: {
+        type: "consequence",
+        tone: "negative",
+        text: "You take the introduction and agree to the success fee. A contingency fee — paid only if the deal closes — with a state-owned entity is a classic corruption indicator under OECD Due Diligence Guidance and South African anti-corruption law. Farouk flags it immediately: the intermediary has no clear track record, the fee structure incentivises improper influence, and Eskom is a state-owned entity with PEP exposure. The deal is paused, and the matter is escalated to the compliance committee for investigation of a potential bribery risk.",
+        learningPoint: "A success fee contingent on closing a deal with a state-owned entity is a textbook corruption red flag — it creates an incentive to improperly influence public officials, which is prohibited under OECD guidance and anti-bribery laws.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_decline: {
+        type: "consequence",
+        tone: "positive",
+        text: "You decline. Farouk documents the rationale: Eskom is a South African state-owned entity, dealings require awareness of public-procurement rules and anti-corruption standards, and a contingency fee structure with a state-owned entity is a corruption red flag under the OECD Due Diligence Guidance. You route any future engagement with Eskom through proper procurement channels with full transparency, documented due diligence, and no intermediary success fees tied to deal outcomes.",
+        learningPoint: "Dealings with state-owned entities like Eskom require heightened anti-corruption due diligence — contingency fees tied to deal outcomes are prohibited, and all engagements should go through transparent public-procurement channels.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_flat: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You take the introduction but restructure the fee as a flat consultancy payment regardless of deal outcome. This removes the contingency incentive, but the intermediary still has no track record, opaque ownership, and the engagement with a state-owned entity still requires full PEP screening and anti-corruption due diligence. Farouk insists on completing the KYC file — UBO identification, source-of-funds, sanctions screening — before any engagement proceeds. The flat fee is documented and capped, and the intermediary is properly onboarded.",
+        learningPoint: "Restructuring a contingency fee to a flat fee removes the direct corruption incentive, but engagements with state-owned entities still require full anti-corruption due diligence, PEP screening, and transparent documentation of all payments.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "State-owned entities like Eskom and Transnet carry heightened corruption risk — apply anti-corruption due diligence before, not after, engaging.",
+        relatedTopics: ["Sanctions, Due Diligence & Compliance", "South African Thermal Coal Industry"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m2_offmarket_sulphur",
+    title: "The Off-Market Sulphur Offer",
+    course: "ifrs-commodities",
+    module: 2,
+    dilemmaType: "compliance_redflag",
+    characters: ["Priya (Trader)", "Farouk (Compliance & Sanctions Officer)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "A Middle East counterparty offers a large molten sulphur cargo well below the current Argus/Platts assessment, citing 'logistics savings.' Their onboarding documentation is still incomplete — no UBO chart, no sanctions screening evidence. Sulphur supply is concentrated in the Middle East, which accounts for roughly 50% of seaborne trade. Proceed, delay for KYC, or decline?",
+        choices: [
+          { text: "Proceed — the price is too good to pass up, complete KYC after loading", next: "outcome_proceed" },
+          { text: "Delay — no cargo moves until onboarding and sanctions screening are complete", next: "outcome_delay" },
+          { text: "Decline — the price anomaly and incomplete KYC are too risky", next: "outcome_decline" },
+        ],
+      },
+      outcome_proceed: {
+        type: "consequence",
+        tone: "negative",
+        text: "You proceed with the cargo before KYC is complete. A price well below the published Argus assessment with no clear explanation is a trade-based money laundering red flag — over- or under-invoicing to move illicit value across borders. Farouk is furious: you've committed to a transaction with an unscreened counterparty, unknown UBO, and an unexplained price anomaly. If the counterparty turns out to be sanctioned, or the cargo is linked to a sanctioned jurisdiction near the Strait of Hormuz, the company faces enforcement action and reputational damage.",
+        learningPoint: "A price significantly below the published benchmark with no credible explanation is a trade-based money laundering red flag — sanctions screening and UBO identification must be completed before any transaction proceeds, not after.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_delay: {
+        type: "consequence",
+        tone: "positive",
+        text: "You hold the cargo until onboarding is complete. Farouk runs the full KYC: corporate registration, UBO chart, sanctions screening against OFAC/EU/UN lists, and source-of-funds verification. The price anomaly is investigated — if the 'logistics savings' are genuine and documented, the deal can proceed with confidence. If not, you've avoided a potential TBML exposure. The Middle East counterparty is either properly onboarded or the deal is declined. Either way, the compliance posture is correct.",
+        learningPoint: "Completing KYC, UBO identification, and sanctions screening before a transaction proceeds — especially when a price anomaly is present — is the correct risk-based approach to trade-based money laundering prevention.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_decline: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You decline outright. The combination of a below-benchmark price, incomplete KYC, and the Middle East supply concentration risk is too much. You may have walked away from a legitimate deal — logistics savings can be real, and Middle East sulphur is a major supply source. But without complete onboarding, you can't distinguish a genuine opportunity from a laundering risk. The conservative approach is defensible, but Farouk notes you could have delayed rather than declined if the counterparty was willing to complete KYC.",
+        learningPoint: "Declining a deal with incomplete KYC is defensible, but the risk-based approach is to delay and complete due diligence first — a genuine counterparty will complete onboarding; an illegitimate one will walk away.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Price anomalies and incomplete KYC are dual red flags — screen before you ship.",
+        relatedTopics: ["Sulphur Trading", "Sanctions, Due Diligence & Compliance"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m2_hormuz_disruption",
+    title: "The Hormuz Disruption Call",
+    course: "ifrs-commodities",
+    module: 2,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Priya (Trader)", "Daniel (Financial Controller)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "News breaks of disruption risk in the Strait of Hormuz — a critical chokepoint for sulphur shipping. You hold an open sulphur position. Because sulphur supply is inelastic (byproduct-driven) and concentrated in the Middle East, disruption can cause sharp price spikes. Do you lock in a price now at a premium, or wait?",
+        choices: [
+          { text: "Lock in now — take the premium price before it spikes further", next: "outcome_lock" },
+          { text: "Wait — the disruption may resolve and prices could reverse", next: "outcome_wait" },
+          { text: "Hedge partially — lock in 50% now, leave 50% open", next: "outcome_hedge" },
+        ],
+      },
+      outcome_lock: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You lock in at the current premium. If the disruption worsens, you've secured a good price and protected your margin. But if the disruption resolves quickly, you've locked in above where the market settles — the premium you paid becomes a cost. Sulphur supply is inelastic: because it's a byproduct of refining and gas processing, supply can't ramp up to meet demand, so price spikes can be sharp. You've made a definitive call on the direction of a volatile market.",
+        learningPoint: "Locking in a price during a supply disruption protects against further spikes but forgoes upside if the disruption resolves — the inelastic, concentrated nature of sulphur supply makes this a high-stakes directional bet.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_wait: {
+        type: "consequence",
+        tone: "negative",
+        text: "You wait. The disruption worsens — Strait of Hormuz shipping is disrupted, Middle East sulphur supply is constrained, and because supply is inelastic (byproduct-driven, can't ramp up), prices spike sharply. Your open position is now deeply underwater relative to where you could have locked in. The inelasticity of sulphur supply — tied to refinery and gas plant activity, not sulphur demand — means price spikes can be severe and prolonged when a chokepoint is threatened. Daniel has to explain the unrealised loss at quarter-end.",
+        learningPoint: "Sulphur supply is inelastic and concentrated in chokepoint regions — waiting through a disruption risks exposure to sharp, prolonged price spikes that supply cannot self-correct through increased production.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_hedge: {
+        type: "consequence",
+        tone: "positive",
+        text: "You lock in 50% of the position and leave 50% open. If the disruption worsens, the locked portion protects half your exposure while the open half benefits from rising prices. If it resolves, only half the position is exposed to the price reversal. This partial hedge balances the risk of a spike against the risk of a reversal — appropriate for a commodity whose supply is inelastic and concentrated in a chokepoint. Daniel can model both scenarios and the financial impact is bounded.",
+        learningPoint: "A partial hedge on an inelastic, chokepoint-exposed commodity like sulphur balances the risk of a supply-driven price spike against the risk of a reversal — it bounds the financial impact in both directions.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Sulphur's inelastic supply and chokepoint concentration make it uniquely volatile — manage the directional risk deliberately.",
+        relatedTopics: ["Sulphur Trading", "Pricing Mechanisms in African Coal Trades"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 3 — IFRS Foundations for Commodity Accountants
+  // ═══════════════════════════════════════════════════
+  {
+    id: "ifrs_m3_hedge_paperwork",
+    title: "The Quarter-End Hedge Paperwork",
+    course: "ifrs-commodities",
+    module: 3,
+    dilemmaType: "stakeholder_pressure",
+    characters: ["Nomsa (CFO)", "Daniel (Financial Controller)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Nomsa",
+        text: "Nomsa wants the API4 futures hedge on Q3 forecast coal sales treated as a cash flow hedge in this quarter's accounts to smooth earnings. But the formal hedge documentation — risk management objective, economic relationship assessment, how effectiveness will be measured — hasn't been finalised yet. IFRS 9 requires documentation at inception. Book it as a hedge now, or hold it at FVTPL until the paperwork is done?",
+        choices: [
+          { text: "Book it as a cash flow hedge now — complete the documentation after quarter-end", next: "outcome_book" },
+          { text: "Hold at FVTPL until documentation is complete — then designate prospectively", next: "outcome_hold" },
+          { text: "Backdate the documentation to before quarter-end to make it qualify", next: "outcome_backdate" },
+        ],
+      },
+      outcome_book: {
+        type: "consequence",
+        tone: "negative",
+        text: "You book the cash flow hedge without documentation. IFRS 9 requires hedge documentation at inception — risk management objective, identification of the hedged item and hedging instrument, the economic relationship, and how effectiveness will be assessed. Without it, the hedge relationship doesn't qualify for hedge accounting. The auditors reject the designation: the derivative must be measured at FVTPL with all fair value changes hitting P&L, creating the exact earnings volatility Nomsa was trying to avoid. The restatement is embarrassing and the audit committee asks why controls failed.",
+        learningPoint: "IFRS 9 requires hedge documentation at inception — without it, the hedge relationship does not qualify for hedge accounting, and the derivative must be measured at FVTPL through profit or loss.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_hold: {
+        type: "consequence",
+        tone: "positive",
+        text: "You hold the derivative at FVTPL until documentation is complete. Fair value changes hit P&L this quarter — creating some volatility — but the treatment is correct. Once the documentation is finalised (risk management objective, economic relationship, effectiveness assessment), the hedge can be designated prospectively from that date forward. Future effective portions go to OCI and are reclassified when the forecast sale is recognised. Nomsa gets her hedge accounting — just not retroactively.",
+        learningPoint: "Hedge accounting under IFRS 9 can only be applied prospectively from the date documentation is complete — holding a derivative at FVTPL until then is correct, even if it creates short-term earnings volatility.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_backdate: {
+        type: "consequence",
+        tone: "negative",
+        text: "You backdate the documentation to before quarter-end. This is documentation fraud — IFRS 9 requires documentation at inception, and backdating creates a false audit trail. The auditors identify the discrepancy between the documentation date and the actual completion date. This is a serious internal control failure that goes beyond accounting — it's a misrepresentation to auditors. Nomsa faces scrutiny from the audit committee, and the external auditors may need to report the control deficiency to the board.",
+        learningPoint: "Backdating hedge documentation to qualify for hedge accounting is a serious control failure — IFRS 9 requires genuine documentation at inception, and falsifying dates is a misrepresentation to auditors with consequences far beyond accounting treatment.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Hedge accounting is a privilege, not a right — documentation at inception is the price of admission under IFRS 9.",
+        relatedTopics: ["IFRS 9 — Financial Instruments: Hedging & Derivatives", "Hedge Accounting for a Coal Trader"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m3_broker_trader_election",
+    title: "The Broker-Trader Election",
+    course: "ifrs-commodities",
+    module: 3,
+    dilemmaType: "accounting_judgment",
+    characters: ["Daniel (Financial Controller)", "Nomsa (CFO)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Daniel",
+        text: "Daniel is measuring a coal stockpile. Under IAS 2.3(b), commodity broker-traders may measure inventory at fair value less costs to sell, with changes through P&L — instead of the standard lower-of-cost-and-NRV rule. Nomsa asks whether the company qualifies for the broker-trader exception and whether it can be elected or dropped each period to flatter results. What's the correct basis?",
+        choices: [
+          { text: "Apply broker-trader exception — it can be elected or dropped each period as needed", next: "outcome_elect" },
+          { text: "Assess whether the company genuinely qualifies as a broker-trader, then apply consistently", next: "outcome_assess" },
+          { text: "Never use it — stick with lower of cost and NRV for all inventory", next: "outcome_never" },
+        ],
+      },
+      outcome_elect: {
+        type: "consequence",
+        tone: "negative",
+        text: "You treat the exception as a discretionary election, applying it in quarters where it flatters results and dropping it when it doesn't. IAS 2.3(b) is not a policy election you can switch on and off — it's an exception available to entities that genuinely meet the definition of a commodity broker-trader (buying commodities to sell in the near term and profiting from price movements). Switching between methods period-to-period to manipulate results is a change in accounting policy that lacks commercial substance and would be rejected by auditors as earnings management.",
+        learningPoint: "The IAS 2.3(b) broker-trader exception is not a discretionary election that can be switched on and off — it applies only to entities that genuinely meet the definition of a broker-trader, and the accounting policy must be applied consistently.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_assess: {
+        type: "consequence",
+        tone: "positive",
+        text: "You assess whether the company genuinely qualifies. The IAS 2.3(b) exception applies to commodity broker-traders — entities that buy commodities to sell in the near term and profit from price movements, not entities that hold inventory for use in production or long-term supply. If the company's business model is trading (buying to sell quickly, profiting from price spreads), the exception is appropriate and should be applied consistently. If the company holds coal for power generation or long-term contracts, standard lower-of-cost-and-NRV applies. The assessment is based on business model, not on which method gives better numbers this quarter.",
+        learningPoint: "The broker-trader exception under IAS 2.3(b) is available based on the entity's business model — buying commodities to sell in the near term and profiting from price movements — not as a discretionary choice, and once determined, the policy must be applied consistently.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_never: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You never use the broker-trader exception and apply lower-of-cost-and-NRV to all inventory. This is safe and defensible — but if the company genuinely is a broker-trader (buying to sell in the near term, profiting from price movements), standard lower-of-cost-and-NRV may not reflect the economic reality of a trading book. Fair value less costs to sell would better reflect the mark-to-market nature of a trading operation. You've avoided complexity but may be misstating the carrying value of trading inventory relative to its economic substance.",
+        learningPoint: "Applying lower-of-cost-and-NRV to all inventory is safe, but if the entity genuinely is a broker-trader, the IAS 2.3(b) exception at fair value less costs to sell better reflects the economic reality of a trading book — the choice depends on the business model.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "The broker-trader exception is about business model, not earnings management — assess honestly, apply consistently.",
+        relatedTopics: ["IAS 2 — Inventories", "Inventory Write-Down Scenario"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m3_storage_tank_charter",
+    title: "The Storage Tank Charter",
+    course: "ifrs-commodities",
+    module: 3,
+    dilemmaType: "accounting_judgment",
+    characters: ["Daniel (Financial Controller)", "Priya (Trader)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Daniel",
+        text: "A 10-month storage tank charter for liquid sulphur is being negotiated. Under IFRS 16, the short-term lease exemption allows leases of 12 months or less to be expensed straight-line with no balance-sheet recognition. Is this 10-month charter within the exemption, and does the decision depend only on the stated term?",
+        choices: [
+          { text: "Yes — 10 months is under 12, so the short-term exemption applies automatically", next: "outcome_automatic" },
+          { text: "Assess the full terms — check for renewal options and variable payments before deciding", next: "outcome_assess" },
+          { text: "No — storage tanks are always on balance sheet regardless of term", next: "outcome_always" },
+        ],
+      },
+      outcome_automatic: {
+        type: "consequence",
+        tone: "negative",
+        text: "You apply the short-term exemption based solely on the 10-month stated term. But you haven't checked whether the lease contains a renewal option that is reasonably certain to be exercised — if there's a 12-month renewal option that Priya's team intends to use, the actual lease term exceeds 12 months and the exemption doesn't apply. You also haven't assessed variable lease payments based on tonnage throughput — those are excluded from the lease liability and expensed as incurred, but you need to know they exist to account for them correctly. The exemption is applied without proper analysis.",
+        learningPoint: "The IFRS 16 short-term lease exemption depends on the total lease term including renewal options reasonably certain to be exercised — not just the stated initial term — and variable payments based on usage must be separately assessed.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_assess: {
+        type: "consequence",
+        tone: "positive",
+        text: "You assess the full lease terms. The stated term is 10 months, but you check for renewal options — if there's a renewal option that is reasonably certain to be exercised, the total lease term may exceed 12 months and the exemption wouldn't apply. You also identify variable lease payments based on tonnage throughput — under IFRS 16, these are excluded from the lease liability and expensed as incurred. You determine the exemption applies only if the total lease term (including reasonably certain renewals) is 12 months or less, and document the assessment.",
+        learningPoint: "The IFRS 16 short-term lease exemption requires assessing the total lease term including renewal options reasonably certain to be exercised, and variable payments based on usage are excluded from the lease liability and expensed as incurred.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_always: {
+        type: "consequence",
+        tone: "negative",
+        text: "You treat all storage tank charters as on-balance-sheet leases regardless of term. But IFRS 16's short-term lease exemption applies to leases of 12 months or less regardless of asset type — including storage tanks. By refusing to apply the exemption, you recognise a right-of-use asset and lease liability for a 10-month lease that could have been expensed straight-line, unnecessarily inflating the balance sheet and creating depreciation and interest expense calculations that add complexity without benefit.",
+        learningPoint: "IFRS 16's short-term lease exemption applies to leases of 12 months or less regardless of asset type — storage tanks are not categorically excluded from the exemption, and applying it correctly avoids unnecessary balance-sheet complexity.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "The short-term lease exemption isn't just about the stated term — renewal options and variable payments change the analysis.",
+        relatedTopics: ["IFRS 16 — Leases in Trading Operations"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 4 — IFRS Applied to Live Trading Scenarios
+  // ═══════════════════════════════════════════════════
+  {
+    id: "ifrs_m4_onerous_shortcut",
+    title: "The Onerous Contract Shortcut",
+    course: "ifrs-commodities",
+    module: 4,
+    dilemmaType: "accounting_judgment",
+    characters: ["Daniel (Financial Controller)", "Nomsa (CFO)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Daniel",
+        text: "A fixed-price coal purchase contract for 100,000 MT at $130/MT is now underwater — the market price has fallen to $105/MT. The contract cannot be cancelled without a $500,000 penalty. The cost of fulfilling is 100,000 × ($130 − $105) = $2,500,000. Daniel proposes just expensing the $500,000 penalty when paid rather than provisioning now. Is this the correct treatment under IAS 37?",
+        choices: [
+          { text: "Agree — expense the penalty when paid, no provision needed now", next: "outcome_expense" },
+          { text: "Recognise a provision now — the lower of cost to fulfil ($2.5m) and exit penalty ($500k)", next: "outcome_provision" },
+          { text: "Provision for the full $2.5m loss from fulfilling the contract", next: "outcome_full" },
+        ],
+      },
+      outcome_expense: {
+        type: "consequence",
+        tone: "negative",
+        text: "You defer recognition by planning to expense the penalty when paid. But IAS 37 requires recognising an onerous contract provision when the contract becomes onerous — when unavoidable costs exceed expected benefits — not when the penalty is eventually paid. The contract is already onerous: fulfilling at $130 when the market is $105 means unavoidable costs of $2,500,000 exceed the benefit. The provision should be recognised now, not deferred. Auditors will require a restatement, and the timing difference creates a misleading picture of the current period's results.",
+        learningPoint: "IAS 37 requires recognising an onerous contract provision at the point the contract becomes onerous — when unavoidable costs exceed expected benefits — not deferring recognition to when the penalty is eventually paid.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_provision: {
+        type: "consequence",
+        tone: "positive",
+        text: "You recognise a $500,000 provision now. The contract is onerous — unavoidable costs of fulfilling ($2,500,000) exceed the expected benefit. IAS 37 measures the provision as the lower of the cost of fulfilling ($2.5m) and the penalty to exit ($500,000). A rational trader would pay the $500,000 penalty rather than absorb a $2.5m loss, so the provision is $500,000. Before booking it, you also recognise any impairment on assets dedicated to the contract (e.g., related inventory written down to NRV under IAS 2) — the onerous provision covers only the remaining loss.",
+        learningPoint: "An onerous contract provision under IAS 37 is the lower of the cost of fulfilling and the exit penalty, recognised when the contract becomes onerous — and impairment on dedicated assets must be recognised first.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_full: {
+        type: "consequence",
+        tone: "negative",
+        text: "You provision for the full $2,500,000 loss from fulfilling. But IAS 37 measures the unavoidable cost as the lower of the cost of fulfilling and the compensation/penalty for not fulfilling. A rational trader would pay the $500,000 penalty rather than absorb a $2.5m loss — so the provision should be $500,000, not $2,500,000. Over-provisioning understates current-period profit and creates a reversal in a future period when the actual outcome differs from the provision. Auditors will challenge the measurement as not reflecting the entity's rational economic choice.",
+        learningPoint: "The onerous contract provision is measured at the lower of cost to fulfil and exit penalty — over-provisioning at the full cost of fulfilment ignores the rational economic option to exit and creates misleading financial statements.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Onerous means unavoidable — measure at the lower of fulfil and exit, and recognise it when it becomes onerous, not when you pay.",
+        relatedTopics: ["Onerous Contract Provision", "IAS 37 — Provisions and Contingent Liabilities"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m4_writedown_reversal",
+    title: "The Sulphur Write-Down Reversal",
+    course: "ifrs-commodities",
+    module: 4,
+    dilemmaType: "accounting_judgment",
+    characters: ["Daniel (Financial Controller)", "Nomsa (CFO)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Nomsa",
+        text: "Last quarter, sulphur inventory was written down from $180/MT cost to $147/MT NRV (selling price $155 minus selling costs $8). This quarter, the Argus price has partially recovered. Nomsa asks whether the write-down can be reversed above the original $180/MT cost to 'catch up' for a strong quarter. What does IAS 2 actually allow?",
+        choices: [
+          { text: "Yes — reverse above original cost to reflect the full price recovery", next: "outcome_above" },
+          { text: "Reverse up to original cost ($180/MT) — never above it", next: "outcome_cap" },
+          { text: "No reversal is permitted under IAS 2 once a write-down is recognised", next: "outcome_no_reverse" },
+        ],
+      },
+      outcome_above: {
+        type: "consequence",
+        tone: "negative",
+        text: "You reverse above original cost. IAS 2 permits reversing a previous write-down when NRV recovers — but the reversal is capped at original cost. The carrying amount after reversal must be the lower of original cost and the new NRV, never above original cost. Reversing above $180/MT inflates current-period income and creates a carrying amount that exceeds what the inventory was originally recognised at — a clear IAS 2 violation. Auditors will require a correction, and Nomsa's 'strong quarter' becomes a restatement.",
+        learningPoint: "IAS 2 permits reversing an inventory write-down when NRV recovers, but the reversal is capped at original cost — the carrying amount can never exceed what the inventory was originally recognised at.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_cap: {
+        type: "consequence",
+        tone: "positive",
+        text: "You reverse up to original cost. If the new NRV is $175/MT (below original cost of $180), the reversal brings the carrying amount to $175/MT — the lower of original cost ($180) and new NRV ($175). The $28/MT reversal ($175 − $147) is recognised as income in the current period, reducing cost of sales. If NRV had recovered above $180, the carrying amount would simply be capped at $180 — no reversal above original cost. The treatment is correct and the financial statements faithfully reflect the recovery.",
+        learningPoint: "An IAS 2 inventory write-down reversal is recognised as income when NRV recovers, capped at original cost — the carrying amount becomes the lower of original cost and the new NRV, never exceeding original cost.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_no_reverse: {
+        type: "consequence",
+        tone: "negative",
+        text: "You refuse to reverse the write-down. But IAS 2 explicitly permits reversing a previous write-down (up to original cost) when NRV recovers. By not reversing, you understate current-period income and overstate cost of sales — the inventory carrying amount doesn't reflect the recovered NRV. This is just as incorrect as over-reversing: IAS 2 requires inventory to be carried at the lower of cost and NRV, and when NRV recovers, the carrying amount must be updated. Refusing to reverse creates a conservative but inaccurate picture.",
+        learningPoint: "IAS 2 requires reversing a previous inventory write-down (up to original cost) when NRV recovers — refusing to reverse understates income and misstates the carrying amount, which must always reflect the lower of cost and NRV.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Write-downs can reverse — but only up to original cost. IAS 2 requires faithful measurement in both directions.",
+        relatedTopics: ["Inventory Write-Down Scenario", "IAS 2 — Inventories"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m4_api4_pricing_clause",
+    title: "The API4 Pricing Clause Question",
+    course: "ifrs-commodities",
+    module: 4,
+    dilemmaType: "accounting_judgment",
+    characters: ["Daniel (Financial Controller)", "Priya (Trader)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Daniel",
+        text: "A new coal offtake contract prices coal off a regional metals index instead of API4, 'because the counterparty prefers it.' Under IFRS 9, a pricing clause in a non-financial host contract may be an embedded derivative requiring bifurcation if it is not closely related to the host. Does pricing coal off an unrelated metals index change whether the clause is an embedded derivative?",
+        choices: [
+          { text: "No difference — any commodity index link is closely related", next: "outcome_closely" },
+          { text: "Yes — pricing off an unrelated index may require bifurcation at FVTPL", next: "outcome_bifurcate" },
+          { text: "It depends on whether the counterparty is a bank or a trader", next: "outcome_counterparty" },
+        ],
+      },
+      outcome_closely: {
+        type: "consequence",
+        tone: "negative",
+        text: "You treat any commodity index link as closely related. But under IFRS 9, a pricing clause linked to the commodity actually being delivered (coal priced off API4 coal index) is generally closely related — while a pricing clause linked to an unrelated commodity (coal priced off a metals index) is generally NOT closely related. By treating an unrelated metals index as closely related, you fail to bifurcate an embedded derivative that should be separated and measured at FVTPL. The fair value changes of the metals-linked clause are hidden inside the supply contract, creating unmeasured derivative exposure that auditors will flag.",
+        learningPoint: "Under IFRS 9, a pricing clause linked to the commodity being delivered is generally closely related to the host contract, but a pricing link to an unrelated commodity is generally not closely related and may require bifurcation at FVTPL.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_bifurcate: {
+        type: "consequence",
+        tone: "positive",
+        text: "You assess the clause for bifurcation. A coal supply contract is a non-financial host. The pricing clause linked to a metals index (unrelated to coal) has economic characteristics that are not closely related to the host supply contract. A separate instrument with the same terms would meet the definition of a derivative. The hybrid contract is not already measured at FVTPL. All three criteria are met — the embedded derivative is bifurcated and measured at FVTPL, with fair value changes through profit or loss. Daniel properly identifies and measures the derivative exposure.",
+        learningPoint: "Bifurcation of an embedded derivative under IFRS 9 requires: the feature is not closely related to the host, a separate instrument with the same terms would be a derivative, and the hybrid is not already at FVTPL — all three must be true.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_counterparty: {
+        type: "consequence",
+        tone: "negative",
+        text: "You assess bifurcation based on whether the counterparty is a bank or a trader. But the closely-related assessment under IFRS 9 depends on the economic characteristics of the embedded feature relative to the host contract — not on the identity of the counterparty. A pricing clause linked to an unrelated metals index is not closely related to a coal supply contract regardless of who the counterparty is. By introducing an irrelevant factor, you risk applying the wrong analysis and either failing to bifurcate when required or bifurcating when not needed.",
+        learningPoint: "The IFRS 9 closely-related assessment depends on the economic characteristics of the embedded feature relative to the host contract — not on the identity or type of the counterparty.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "It's not about who you're dealing with — it's about whether the pricing feature shares the economic characteristics of the host contract.",
+        relatedTopics: ["Embedded Derivatives in Offtake Agreements", "IFRS 9 — Financial Instruments: Hedging & Derivatives"],
+      },
+    },
+  },
+
+  // ═══════════════════════════════════════════════════
+  // MODULE 5 — Trade Finance, Compliance & Capstone
+  // ═══════════════════════════════════════════════════
+  {
+    id: "ifrs_m5_lc_date_mismatch",
+    title: "The LC Date Mismatch",
+    course: "ifrs-commodities",
+    module: 5,
+    dilemmaType: "documentation_process",
+    characters: ["Priya (Trader)", "Farouk (Compliance & Sanctions Officer)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "The Bill of Lading is dated one day after the latest shipment date allowed under the LC, due to a minor loading delay at Richards Bay. The buyer verbally says it's 'not a problem.' Under a documentary credit, the bank examines documents against the LC terms — a B/L dated after the latest shipment date is a discrepancy. Present the documents as-is, or seek an LC amendment first?",
+        choices: [
+          { text: "Present as-is — the buyer said it's not a problem", next: "outcome_present" },
+          { text: "Seek an LC amendment to extend the shipment date before presenting", next: "outcome_amend" },
+          { text: "Present and request a waiver from the issuing bank", next: "outcome_waiver" },
+        ],
+      },
+      outcome_present: {
+        type: "consequence",
+        tone: "negative",
+        text: "You present the documents as-is. The issuing bank examines them against the LC terms and finds the B/L dated after the latest shipment date — a clear discrepancy. Under a documentary credit, the bank's obligation to pay is triggered only by conforming documents. The buyer's verbal assurance is not binding on the issuing bank. Payment is refused, the documents are held pending the buyer's instructions, and the cargo is on the water with no payment. The discrepancy process takes days or weeks, and Priya has lost negotiating leverage.",
+        learningPoint: "Under a documentary credit, the issuing bank examines documents against the LC terms — a B/L dated after the latest shipment date is a discrepancy that blocks payment, regardless of the buyer's verbal assurances.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_amend: {
+        type: "consequence",
+        tone: "positive",
+        text: "You seek an LC amendment to extend the shipment date before presenting documents. The buyer instructs their bank to issue an amendment, which formally extends the latest shipment date to cover the actual B/L date. Once the amendment is accepted, you present a conforming document set with no discrepancies. The issuing bank pays promptly. The process takes a few days, but the payment is secure and the documentary credit's integrity is maintained. The buyer's verbal assurance has been converted into a binding bank commitment.",
+        learningPoint: "An LC amendment formally resolves a document discrepancy before presentation — converting a buyer's verbal assurance into a binding bank commitment that ensures conforming documents and prompt payment.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_waiver: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You present and request a waiver. The issuing bank notifies the applicant (buyer) of the discrepancy and asks whether they will waive it. If the buyer waives, the bank pays — but this adds days to the process, and the buyer could use the discrepancy as leverage to renegotiate price or terms. It works, but you've ceded control: payment now depends on the buyer's formal waiver decision, not on conforming documents alone. Farouk notes this is a common real-world outcome but prefers the cleaner amendment path when time permits.",
+        learningPoint: "Requesting a discrepancy waiver works but cedes control — payment depends on the buyer's formal waiver decision rather than on conforming documents, creating an opportunity for renegotiation leverage.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Under a documentary credit, the bank follows the documents — verbal assurances don't bind the bank.",
+        relatedTopics: ["Trade Finance Instruments", "Trade Documentation"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m5_third_country_payment",
+    title: "The Third-Country Payment Request",
+    course: "ifrs-commodities",
+    module: 5,
+    dilemmaType: "compliance_redflag",
+    characters: ["Priya (Trader)", "Farouk (Compliance & Sanctions Officer)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "A long-standing coal counterparty requests that payment for this shipment be routed to an account in a jurisdiction unrelated to either party's business or the trade flow. Payments to third-party jurisdictions unrelated to the trade are a recognised trade-based money laundering red flag. Process the payment, or flag it?",
+        choices: [
+          { text: "Process it — they're a long-standing, trusted counterparty", next: "outcome_process" },
+          { text: "Flag it — halt payment pending compliance review and explanation", next: "outcome_flag" },
+          { text: "Process but file an internal note for the records", next: "outcome_note" },
+        ],
+      },
+      outcome_process: {
+        type: "consequence",
+        tone: "negative",
+        text: "You process the payment based on the length of the relationship. But a payment to a third-party jurisdiction unrelated to the trade is a classic TBML red flag — it can indicate layering of illicit funds, sanctions evasion, or tax evasion. A long-standing relationship doesn't eliminate the risk; it may actually mean the counterparty is using the trust to move value undetected. Farouk discovers the routing during a transaction review and immediately escalates. The company may have processed a payment that should have been blocked or reported, exposing it to enforcement risk.",
+        learningPoint: "A payment request to a third-party jurisdiction unrelated to the trade is a trade-based money laundering red flag regardless of the length of the counterparty relationship — trust does not override the obligation to screen and investigate.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_flag: {
+        type: "consequence",
+        tone: "positive",
+        text: "You flag it and halt the payment. Farouk initiates a compliance review: he screens the third-country jurisdiction against sanctions lists, requests a written explanation from the counterparty for the payment routing, verifies the ultimate beneficiary, and assesses whether the routing has a legitimate commercial purpose. If the explanation is credible and documented (e.g., a treasury centre in a different jurisdiction), the payment proceeds with enhanced monitoring. If not, the payment is declined. The long-standing relationship is preserved — the counterparty understands that compliance is non-negotiable.",
+        learningPoint: "Flagging a third-country payment request for compliance review — screening, requesting explanation, verifying the beneficiary — is the correct risk-based response to a TBML red flag, and a legitimate counterparty will provide a credible explanation.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_note: {
+        type: "consequence",
+        tone: "negative",
+        text: "You process the payment but file an internal note. Processing first and documenting later reverses the correct order — the red flag should be investigated before the payment flows, not noted after. If the payment turns out to be illicit, the internal note doesn't undo the transaction. The company has already moved funds to a third-party jurisdiction without understanding why, and the note is evidence that the red flag was recognised but not acted upon — potentially worse than not flagging at all, as it demonstrates wilful ignorance.",
+        learningPoint: "Processing a flagged payment first and documenting later is wilful blindness — a TBML red flag must be investigated and resolved before the payment flows, not noted after the fact.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "Trust is not a compliance control — investigate red flags before the money moves.",
+        relatedTopics: ["AML and Sanctions in African Commodity Trade", "Sanctions, Due Diligence & Compliance"],
+      },
+    },
+  },
+  {
+    id: "ifrs_m5_cbam_margin_squeeze",
+    title: "The CBAM Margin Squeeze",
+    course: "ifrs-commodities",
+    module: 5,
+    dilemmaType: "commercial_tradeoff",
+    characters: ["Priya (Trader)", "Nomsa (CFO)"],
+    startNode: "start",
+    nodes: {
+      start: {
+        type: "decision",
+        speaker: "Priya",
+        text: "A European buyer's CBAM-related carbon costs are compressing what they'll pay for South African thermal coal. India and Pakistan offer better netbacks but require longer relationship-building. CBAM prices the carbon embedded in imports into the EU, reducing European coal demand. Chase the shrinking European book at lower margin, or redirect cargoes toward India/Pakistan?",
+        choices: [
+          { text: "Chase the European book — maintain the relationship at lower margin", next: "outcome_europe" },
+          { text: "Redirect to India/Pakistan — better netbacks, build new relationships", next: "outcome_redirect" },
+          { text: "Split the book — keep a European presence while building Asia", next: "outcome_split" },
+        ],
+      },
+      outcome_europe: {
+        type: "consequence",
+        tone: "negative",
+        text: "You chase the European book at lower margin. CBAM is structurally reducing European demand for carbon-intensive imports — this is not a cyclical dip but a secular trend driven by decarbonisation policy. The margin compression will worsen as CBAM phases in fully. You're holding a position in a declining market, and the longer you stay, the more capital and capacity is tied up in low-margin European trades while competitors establish positions in growing Asian markets. The relationship is preserved, but the economic foundation is eroding.",
+        learningPoint: "CBAM is a structural, not cyclical, pressure on European coal demand — chasing a shrinking market at declining margins ties up capacity that could earn better returns in growing markets.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_redirect: {
+        type: "consequence",
+        tone: "neutral",
+        text: "You redirect to India and Pakistan. India is already the single largest importer of South African coal (25.75 million tons, 45% of RBCT shipments in 2025), so the market is proven. The netbacks are better, and demand is growing rather than declining. But you've abandoned the European relationship entirely — if CBAM is later adjusted or if European buyers need supply for transitional purposes, you have no foothold. Relationship-building in new markets takes time, and the initial integration costs (new KYC, new logistics, new payment terms) are significant.",
+        learningPoint: "Redirecting to growing markets like India and Pakistan captures better netbacks and aligns with the secular demand shift away from CBAM-affected Europe, but requires investment in new relationships and logistics infrastructure.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      outcome_split: {
+        type: "consequence",
+        tone: "positive",
+        text: "You split the book — maintain a reduced European presence for relationship continuity while redirecting the majority of cargoes to India and Pakistan. This hedges the CBAM risk: if European demand declines further, the exposure is limited; if the Asian transition takes time, European volumes provide a bridge. India is already 45% of RBCT shipments — the demand is real. You maintain a foothold in Europe without being overexposed to a structurally declining market, while building the Asian relationships that will drive future growth. Nomsa can model the netback differential and allocate cargoes dynamically.",
+        learningPoint: "Splitting the book between a declining-but-established market and a growing-but-emerging market hedges secular risk — limiting CBAM exposure while capturing Asian demand growth.",
+        choices: [{ text: "Continue", next: "end" }],
+      },
+      end: {
+        type: "ending",
+        text: "CBAM isn't a temporary headwind — it's a structural shift. Manage the transition, don't fight the trend.",
+        relatedTopics: ["Carbon and Environmental Accounting", "South African Thermal Coal Industry"],
+      },
+    },
+  },
+];
