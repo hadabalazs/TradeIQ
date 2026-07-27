@@ -4,7 +4,7 @@ import { PASS_THRESHOLD, shuffleQuestionOptions, diversifyQuizArray } from "@/li
 import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 import InlineDilemma from "@/components/tradeiq/InlineDilemma";
-import ConfidenceGrade from "@/components/tradeiq/ConfidenceGrade";
+import RecallPopup from "@/components/tradeiq/RecallPopup";
 import { recordReview, Grades } from "@/lib/srs";
 
 function interleaveDilemmas(questions, dilemmas) {
@@ -26,7 +26,6 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
   const [finished, setFinished] = useState(false);
   const [result, setResult] = useState(null);
   const [wasCorrect, setWasCorrect] = useState(false);
-  const [confidence, setConfidence] = useState(null);
   const [shuffledQuiz, setShuffledQuiz] = useState(() => interleaveDilemmas(diversifyQuizArray(topic.quiz.map(shuffleQuestionOptions)), dilemmas));
 
   const question = shuffledQuiz[current];
@@ -52,11 +51,12 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
     else recordReview(question, Grades.AGAIN);
   };
 
-  const next = async () => {
+  // `grade` comes from the recall popup on a correct answer. Wrong answers and
+  // dilemmas advance via the Next button and pass nothing.
+  const next = async (grade) => {
     if (wasCorrect && questionType !== "dilemma") {
-      recordReview(question, confidence ?? Grades.GOOD);
+      recordReview(question, grade ?? Grades.GOOD);
     }
-    setConfidence(null);
     setWasCorrect(false);
     if (isLast) {
       const score = Math.round((correctCount / scoredLength) * 100);
@@ -207,13 +207,15 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
         </div>
       )}
 
+      {/* Correct → the recall popup grades and advances in one tap, so no Next
+          button. Wrong answers and dilemmas keep the explanation + Next flow. */}
       {answered && wasCorrect && questionType !== "dilemma" && (
-        <ConfidenceGrade value={confidence} onSelect={setConfidence} />
+        <RecallPopup onSelect={(grade) => next(grade)} />
       )}
 
-      {answered && (
+      {answered && !(wasCorrect && questionType !== "dilemma") && (
         <button
-          onClick={next}
+          onClick={() => next()}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition ml-auto"
         >
           {isLast ? "See Results" : "Next Question"}

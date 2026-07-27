@@ -11,7 +11,7 @@ import {
 import { PASS_THRESHOLD } from "@/lib/courses";
 import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
-import ConfidenceGrade from "@/components/tradeiq/ConfidenceGrade";
+import RecallPopup from "@/components/tradeiq/RecallPopup";
 import { recordReview, Grades } from "@/lib/srs";
 
 // Delay before auto-advancing after a wrong answer, so the learner sees the
@@ -260,14 +260,9 @@ export default function PracticeQuiz({
       {questionType === "sorting" && <SortingQuestion key={`so-${current}`} question={question} answered={answered} onAnswered={chooseTyped} showExplanation={false} />}
       {questionType === "term-match" && <TermMatchQuestion key={`tm-${current}`} question={question} answered={answered} onAnswered={chooseTyped} showExplanation={false} />}
 
-      {/* Correct → confidence grade IS the advance control (tap = grade + next).
+      {/* Correct → recall popup IS the advance control (tap = grade + next).
           No separate "Next" button anywhere. Wrong → auto-advances after a beat. */}
-      {answered && wasCorrect && (
-        <div>
-          <p className="text-xs text-slate-500 mb-2.5 text-center">Tap how sure you were — that sets when it comes back.</p>
-          <ConfidenceGrade value={null} onSelect={(grade) => advance(grade)} />
-        </div>
-      )}
+      {answered && wasCorrect && <RecallPopup onSelect={(grade) => advance(grade)} />}
       {answered && !wasCorrect && (
         <div className="flex items-center justify-center gap-2 text-sm text-slate-500 py-2">
           <span className="inline-block w-4 h-4 border-2 border-tiq-mint/30 border-t-tiq-mint rounded-full animate-spin" />
