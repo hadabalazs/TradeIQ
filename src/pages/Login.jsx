@@ -29,12 +29,12 @@ export default function Login() {
           return;
         }
         const result = await syncOnLogin(data.session.user.id);
-        if (result === "pulled") { window.location.href = "/"; return; }
+        if (result === "merged-changed") { window.location.href = "/"; return; }
       } else {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
         const result = await syncOnLogin(data.session.user.id);
-        if (result === "pulled") { window.location.href = "/"; return; }
+        if (result === "merged-changed") { window.location.href = "/"; return; }
       }
       navigate("/");
     } catch (err) {

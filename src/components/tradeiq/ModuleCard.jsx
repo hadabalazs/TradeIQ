@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Lock, CheckCircle2, ArrowRight, BookOpen, ClipboardList } from "lucide-react";
+import { Lock, CheckCircle2, ArrowRight, BookOpen, ClipboardList, Zap } from "lucide-react";
 import { isModuleUnlocked, moduleProgress } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
 
@@ -17,7 +17,7 @@ export default function ModuleCard({ course, module: mod, index }) {
       className={`relative rounded-xl border p-5 transition group ${
         unlocked
           ? "bg-white border-tiq-border hover:border-tiq-mint/40 cursor-pointer"
-          : "bg-tiq-mintLight/50 border-tiq-border/50 opacity-60"
+          : "bg-tiq-mintLight/50 border-tiq-border/50"
       }`}
     >
       <div className="flex items-start justify-between mb-3">
@@ -61,10 +61,23 @@ export default function ModuleCard({ course, module: mod, index }) {
           </Link>
         </div>
       ) : (
-        <p className="text-xs text-slate-400 flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5" />
-          Complete previous module to unlock
-        </p>
+        // Locked, but advanced learners can fast-track: pass the module quiz to
+        // test out of the module. Passing marks its topics complete and unlocks
+        // the next module — same as working through the lessons.
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-400 flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5" />
+            Complete previous module to unlock
+          </p>
+          <Link
+            to={`/course/${course.id}/quiz/${mod.id}`}
+            className="flex items-center gap-1.5 text-xs font-medium text-tiq-gold hover:text-tiq-mint transition shrink-0"
+            title="Already know this? Pass the module quiz to skip ahead."
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Test out
+          </Link>
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,13 @@
-// Local-first cloud sync.
-// localStorage remains the source of truth while working; changes are
-// debounce-pushed to Supabase when signed in. On login, newest data wins.
+// Local-first cloud sync with CONFLICT-FREE MERGE.
+//
+// Old behaviour was last-write-wins on a single timestamp, which could let a
+// stale/empty device overwrite good progress — and a deploy (which forces a
+// reload) kept re-triggering that. Now every sync MERGES cloud + local so the
+// result is the union: progress can only ever grow, never be lost, regardless
+// of deploys, device order, or clock skew.
 
 import { supabase } from '@/lib/supabaseClient';
+import { mergeProgress, mergeSrsCards, mergeCustomCourses, mergeNotes } from '@/lib/mergeProgress';
 
 const KEYS = {
   progress: 'tradeiq_progress',
@@ -10,7 +15,6 @@ const KEYS = {
   notes: 'tradeiq_lesson_notes',
   custom_courses: 'tradeiq_custom_courses',
 };
-const LAST_CHANGE_KEY = 'tradeiq_last_local_change';
 
 let pushTimer = null;
 let currentUserId = null;
@@ -23,6 +27,10 @@ function readJSON(key) {
     return null;
   }
 }
+function writeJSON(key, value) {
+  if (value == null) return;
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
 
 export function setSyncUser(userId) {
   currentUserId = userId || null;
@@ -30,10 +38,9 @@ export function setSyncUser(userId) {
 
 // Call after any local data write. Debounces a cloud push when signed in.
 export function notifyDataChanged() {
-  try { localStorage.setItem(LAST_CHANGE_KEY, new Date().toISOString()); } catch { /* ignore */ }
   if (!currentUserId || !navigator.onLine) return;
   clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => { pushToCloud().catch(() => {}); }, 3000);
+  pushTimer = setTimeout(() => { pushToCloud().catch(() => {}); }, 1200);
 }
 
 export async function pushToCloud() {
@@ -49,8 +56,11 @@ export async function pushToCloud() {
   await supabase.from('user_progress').upsert(payload, { onConflict: 'user_id' });
 }
 
-// On login: newest side wins. Returns 'pulled' if cloud data replaced local
-// (caller should reload the app), 'pushed' or 'none' otherwise.
+// Merge cloud into local (and push the union back). Returns:
+//   'merged-changed' if local data changed as a result (caller should reload),
+//   'merged-same'    if local was already a superset (no reload needed),
+//   'seeded'         if there was no cloud row yet (local pushed up),
+//   'none'           on error.
 export async function syncOnLogin(userId) {
   setSyncUser(userId);
   const { data, error } = await supabase
@@ -60,39 +70,52 @@ export async function syncOnLogin(userId) {
     .maybeSingle();
   if (error) return 'none';
 
-  const localChange = localStorage.getItem(LAST_CHANGE_KEY);
-  const cloudChange = data?.updated_at || null;
+  const localProgress = readJSON(KEYS.progress);
+  const localSrs = readJSON(KEYS.srs_cards);
+  const localNotes = readJSON(KEYS.notes);
+  const localCustom = readJSON(KEYS.custom_courses);
 
-  if (data && (!localChange || new Date(cloudChange) > new Date(localChange))) {
-    // Cloud is newer (or this device is fresh) — apply cloud locally.
-    const map = {
-      [KEYS.progress]: data.progress,
-      [KEYS.srs_cards]: data.srs_cards,
-      [KEYS.notes]: data.notes,
-      [KEYS.custom_courses]: data.custom_courses,
-    };
-    for (const [key, value] of Object.entries(map)) {
-      if (value != null) {
-        try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
-      }
-    }
-    try { localStorage.setItem(LAST_CHANGE_KEY, cloudChange); } catch { /* ignore */ }
-    return 'pulled';
+  if (!data) {
+    // No cloud row yet — seed it from local.
+    await pushToCloud().catch(() => {});
+    return 'seeded';
   }
 
-  // Local is newer or cloud row doesn't exist yet — seed the cloud from local.
+  const beforeProgress = JSON.stringify(localProgress);
+  const beforeSrs = JSON.stringify(localSrs);
+
+  const mergedProgress = mergeProgress(data.progress || null, localProgress || null);
+  const mergedSrs = mergeSrsCards(data.srs_cards || {}, localSrs || {});
+  const mergedNotes = mergeNotes(data.notes || null, localNotes || null);
+  const mergedCustom = mergeCustomCourses(data.custom_courses || null, localCustom || null);
+
+  // Write the merged union locally.
+  writeJSON(KEYS.progress, mergedProgress);
+  writeJSON(KEYS.srs_cards, mergedSrs);
+  writeJSON(KEYS.notes, mergedNotes);
+  writeJSON(KEYS.custom_courses, mergedCustom);
+
+  // Push the union back so the cloud also holds the complete picture.
   await pushToCloud().catch(() => {});
-  return data ? 'pushed' : 'seeded';
+
+  const localChanged =
+    beforeProgress !== JSON.stringify(mergedProgress) ||
+    beforeSrs !== JSON.stringify(mergedSrs);
+  return localChanged ? 'merged-changed' : 'merged-same';
 }
 
 // Best-effort flush when the tab hides or connectivity returns.
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && currentUserId) {
+      clearTimeout(pushTimer);
       pushToCloud().catch(() => {});
     }
   });
   window.addEventListener('online', () => {
     if (currentUserId) pushToCloud().catch(() => {});
+  });
+  window.addEventListener('pagehide', () => {
+    if (currentUserId) { clearTimeout(pushTimer); pushToCloud().catch(() => {}); }
   });
 }

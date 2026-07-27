@@ -147,6 +147,7 @@ export default function DailyLesson() {
                 onExit={() => { setMixedQuestions(null); setQuizStarted(false); }}
                 title="Mixed Review"
                 exitLabel="Back to Recap"
+                overlay
               />
             ) : (
               <PracticeQuiz
@@ -155,6 +156,7 @@ export default function DailyLesson() {
                 onExit={() => setQuizStarted(false)}
                 title="Daily Recap"
                 exitLabel="Back to Recap"
+                overlay
               />
             )
           )}
