@@ -31,6 +31,7 @@ export default function ModuleQuiz() {
   const quizId = `module_${module.id}`;
   const virtualTopic = { id: quizId, title: module.title, quiz };
   const courseProg = progress?.courses?.[course.id] || {};
+  const nextModule = course.modules[moduleIndex + 1];
 
   const handleQuizComplete = async (correct, total) => {
     const percent = Math.round((correct / total) * 100);
@@ -48,8 +49,16 @@ export default function ModuleQuiz() {
     const firstPass = new Set(courseProg.passed_first_time || []);
     if (isFirstPass) firstPass.add(quizId);
 
+    // Passing the module quiz demonstrates mastery of the module — mark all
+    // its topics complete so the NEXT module unlocks (isModuleUnlocked checks
+    // that every previous-module topic is in completed_topics). This is what
+    // lets a passing quiz carry you forward.
+    const completed = new Set(courseProg.completed_topics || []);
+    if (passed) {
+      for (const t of module.topics) completed.add(t.id);
+    }
+
     const activityUpdate = computeActivityStreakUpdate(progress);
-    // Save course-specific progress + activity streak
     save({
       courses: {
         ...(progress.courses || {}),
@@ -57,16 +66,29 @@ export default function ModuleQuiz() {
           ...courseProg,
           quiz_scores: newScores,
           passed_first_time: Array.from(firstPass),
+          completed_topics: Array.from(completed),
         },
       },
       total_xp: (progress?.total_xp || 0) + xpGain,
       ...(activityUpdate || {}),
     });
 
-    return { percent, passed, xpGain, isFirstPass };
+    return { percent, passed, xpGain, isFirstPass, hasNextModule: !!nextModule };
   };
 
   const prevScore = courseProg.quiz_scores?.[quizId]?.percent;
+
+  // Where "Continue" goes after the quiz: next module's first lesson if it
+  // exists, else the final assessment / dashboard.
+  const goForward = (passed) => {
+    if (passed && nextModule && nextModule.topics.length > 0) {
+      navigate(`/course/${courseId}/learn/${nextModule.topics[0].id}`);
+    } else if (passed && !nextModule) {
+      navigate(`/course/${courseId}/final`);
+    } else {
+      navigate(`/course/${courseId}`);
+    }
+  };
 
   return (
     <div>
@@ -90,6 +112,10 @@ export default function ModuleQuiz() {
             <span className="ml-2 text-tiq-mint font-mono-tiq">Best: {prevScore}%</span>
           )}
         </p>
+        <p className="text-xs text-slate-500 mt-1">
+          Pass ({PASS_THRESHOLD}%+) to complete this module and unlock
+          {nextModule ? ` Module ${moduleIndex + 2}` : " the final assessment"}.
+        </p>
       </div>
 
       <QuizView
@@ -97,14 +123,9 @@ export default function ModuleQuiz() {
         dilemmas={moduleDilemmas}
         course={course}
         onComplete={handleQuizComplete}
-        onBackToLesson={() => {
-          const nextModule = course.modules[moduleIndex + 1];
-          if (nextModule && nextModule.topics.length > 0) {
-            navigate(`/course/${courseId}/learn/${nextModule.topics[0].id}`);
-          } else {
-            navigate(`/course/${courseId}`);
-          }
-        }}
+        continueLabel={nextModule ? `Next Module →` : `Final Assessment →`}
+        onContinue={(res) => goForward(res?.passed)}
+        onBackToLesson={() => navigate(`/course/${courseId}`)}
       />
     </div>
   );

@@ -18,7 +18,7 @@ function interleaveDilemmas(questions, dilemmas) {
   return result;
 }
 
-export default function QuizView({ topic, onComplete, onBackToLesson, dilemmas, course }) {
+export default function QuizView({ topic, onComplete, onBackToLesson, onContinue, continueLabel, dilemmas, course }) {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
@@ -109,9 +109,22 @@ export default function QuizView({ topic, onComplete, onBackToLesson, dilemmas, 
           <button onClick={retake} className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-sm">
             <RotateCcw className="w-4 h-4" /> Retake
           </button>
-          <button onClick={onBackToLesson} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition text-sm">
-            Continue
-          </button>
+          {/* When passed and a forward path is provided, the primary action
+              carries the learner into the next module. Otherwise it falls back
+              to the plain "Continue" (back to dashboard/lesson). */}
+          {passed && onContinue ? (
+            <button
+              onClick={() => onContinue(result)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition text-sm"
+            >
+              {continueLabel || "Continue"}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={onBackToLesson} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition text-sm">
+              {passed ? "Continue" : "Back to lessons"}
+            </button>
+          )}
         </div>
       </div>
     );
