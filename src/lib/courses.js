@@ -132,6 +132,12 @@ export function moduleProgress(course, module, completedTopics) {
 export function isModuleUnlocked(course, moduleIndex, completedTopics, unlockAll = false) {
   if (unlockAll) return true;
   if (moduleIndex === 0) return true;
+  // A module you have already finished stays open, however you finished it —
+  // working through the lessons or testing out via its quiz. Without this, a
+  // module tested out of ahead of its predecessor rendered locked and greyed
+  // while showing full progress, and its lessons could not be reopened.
+  const mod = course.modules[moduleIndex];
+  if (mod.topics.length > 0 && mod.topics.every((t) => completedTopics.includes(t.id))) return true;
   const prev = course.modules[moduleIndex - 1];
   return prev.topics.every((t) => completedTopics.includes(t.id));
 }
@@ -303,10 +309,14 @@ export function getQuizQuestions(course, difficulty, count) {
   return diversifyQuizArray(shuffle(pool).slice(0, Math.min(count, pool.length)).map(shuffleQuestionOptions));
 }
 
-export function getModuleQuiz(course, moduleIndex) {
+// Total number of items in a module quiz, dilemmas included. Callers subtract
+// the dilemma count so the learner always sees exactly MODULE_QUIZ_LENGTH.
+export const MODULE_QUIZ_LENGTH = 20;
+
+export function getModuleQuiz(course, moduleIndex, limit = MODULE_QUIZ_LENGTH) {
   const module = course.modules[moduleIndex];
   if (!module) return [];
-  return shuffle(module.topics.flatMap((t) => t.quiz.map((q) => ({ ...q, _topicId: t.id })))).slice(0, 20);
+  return shuffle(module.topics.flatMap((t) => t.quiz.map((q) => ({ ...q, _topicId: t.id })))).slice(0, Math.max(0, limit));
 }
 
 // Find the next unfinished step in a course: first incomplete topic, or a module quiz not yet passed.

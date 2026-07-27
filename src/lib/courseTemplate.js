@@ -37,14 +37,42 @@ export const DIFFICULTY_LEVELS = [
 ];
 
 // --- MODULES ---
-// Each module has an id (unique within this course), title, subtitle, and topics.
+// Each module has an id (unique within this course), title, subtitle, overview,
+// objectives, and topics.
 // Each topic has an id (unique across ALL courses), title, lesson (markdown), and quiz.
 // Topic IDs are used as keys for sorting/term-match questions, so they must be unique.
+//
+// MODULE FIELDS:
+//   • id         — unique within the course, e.g. "tm_m1"
+//   • title      — shown on the module card, sidebar and overview page
+//   • subtitle   — one line, shown under the title
+//   • overview   — REQUIRED for the module overview page. Markdown, 2-4 short
+//                  paragraphs saying what the module covers and why it matters.
+//                  Rendered at /course/:courseId/module/:moduleId.
+//   • objectives — REQUIRED. Array of 3-6 plain strings, each finishing the
+//                  sentence "By the end you'll be able to ...". Keep them
+//                  concrete and checkable, not vague ("Calculate NRV for a coal
+//                  cargo", not "Understand inventory").
+//   • topics     — the lessons, in teaching order
+//
+// A module missing `overview`/`objectives` still renders — those sections are
+// simply omitted — but the overview page is much thinner, so fill them in.
 export const MODULES = [
   {
     id: "tm_m1",
     title: "Module 1: Foundations",
     subtitle: "The building blocks",
+    overview: `This module sets up the vocabulary and mental model the rest of the
+course builds on. Start here even if you have some background — later modules
+assume these terms mean exactly what they mean here.
+
+Work through the lessons in order, then take the module quiz. Passing the quiz
+completes the module and unlocks the next one.`,
+    objectives: [
+      "Define the core terms used throughout the course",
+      "Explain how the main pieces fit together",
+      "Recognise the common mistakes beginners make",
+    ],
     topics: [
       {
         id: "tm_m1t1",

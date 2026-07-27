@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Lock, CheckCircle2, ArrowRight, BookOpen, ClipboardList, Zap } from "lucide-react";
-import { isModuleUnlocked, moduleProgress } from "@/lib/courses";
+import { Lock, CheckCircle2, ArrowRight, LayoutGrid, ClipboardList, Zap, Trophy } from "lucide-react";
+import { isModuleUnlocked, moduleProgress, PASS_THRESHOLD } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
 
 export default function ModuleCard({ course, module: mod, index }) {
@@ -10,7 +10,8 @@ export default function ModuleCard({ course, module: mod, index }) {
   const completed = courseProg.completed_topics || [];
   const unlocked = isModuleUnlocked(course, index, completed, courseProg.unlock_all);
   const { done, total, percent } = moduleProgress(course, mod, completed);
-  const firstTopic = mod.topics[0];
+  const quizScore = courseProg.quiz_scores?.[`module_${mod.id}`]?.percent;
+  const quizPassed = quizScore != null && quizScore >= PASS_THRESHOLD;
 
   return (
     <div
@@ -29,7 +30,15 @@ export default function ModuleCard({ course, module: mod, index }) {
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           )}
         </div>
-        {!unlocked && <Lock className="w-4 h-4 text-slate-400" />}
+        <div className="flex items-center gap-2">
+          {quizPassed && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
+              <Trophy className="w-3 h-3" />
+              Quiz {quizScore}%
+            </span>
+          )}
+          {!unlocked && <Lock className="w-4 h-4 text-slate-400" />}
+        </div>
       </div>
 
       <h3 className="font-slab text-tiq-ink font-bold text-lg mb-1 leading-tight">{mod.title}</h3>
@@ -44,12 +53,14 @@ export default function ModuleCard({ course, module: mod, index }) {
 
       {unlocked ? (
         <div className="flex items-center gap-4">
+          {/* Lands on the module overview first — see what's inside and pick a
+              lesson, rather than being dropped straight into topic one. */}
           <Link
-            to={`/course/${course.id}/learn/${firstTopic.id}`}
+            to={`/course/${course.id}/module/${mod.id}`}
             className="flex items-center gap-1.5 text-sm text-tiq-mint hover:gap-2.5 transition-all font-medium"
           >
-            <BookOpen className="w-4 h-4" />
-            {done > 0 ? "Continue" : "Start learning"}
+            <LayoutGrid className="w-4 h-4" />
+            {done > 0 ? "Open module" : "View module"}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link

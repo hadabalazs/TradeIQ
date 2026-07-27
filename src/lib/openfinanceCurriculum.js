@@ -9,6 +9,22 @@ export const MODULES = [
     id: "of_m1",
     title: "Foundations of Open Banking & Open Finance",
     subtitle: "From closed systems to permissioned data",
+    overview: `Open Finance is a shift in who controls financial data: from the
+institution that happens to hold it, to the customer it describes. This module
+establishes that idea and the terms built on it, before later modules get into
+the UAE's specific rules and the technical standards underneath.
+
+The distinction between Open Banking, Open Finance and Open Data is worth
+getting right early — they are often used interchangeably in the press, but they
+describe different scopes, and the UAE framework deliberately targets the widest
+of the three.`,
+    objectives: [
+      "Define Open Banking and explain what changed relative to closed banking systems",
+      "Distinguish Open Banking, Open Finance and Open Data by the data each covers",
+      "Identify the stakeholders in the ecosystem and what each one gains or risks",
+      "Compare the major global regimes and the regulatory approach each took",
+      "Articulate the business case for Open Finance from both incumbent and challenger sides",
+    ],
     topics: [
       {
         id: "of_m1t1",
@@ -303,6 +319,22 @@ The CBUAE sees Open Finance as central to its **Financial Infrastructure Transfo
     id: "of_m2",
     title: "The UAE Open Finance Framework",
     subtitle: "Regulation, structure and implementation",
+    overview: `The UAE took a different route to most Open Banking regimes: a
+centralised API hub rather than each institution exposing its own endpoints. This
+module covers the CBUAE's FIT Programme, the Open Finance Regulation itself, and
+what the Nebras hub means in practice for anyone building against it.
+
+Service Initiation is the part most often underestimated. The UAE framework
+reaches well beyond payment initiation, and the licensing path differs depending
+on which services you intend to offer — so the phasing and licensing lesson has
+direct commercial consequences.`,
+    objectives: [
+      "Explain the CBUAE FIT Programme and where Open Finance sits within it",
+      "Summarise what the Open Finance Regulation requires of licensed institutions",
+      "Describe the centralised API hub model and how Nebras differs from a decentralised approach",
+      "Explain Service Initiation and why it is broader than payment initiation",
+      "Map the phased implementation timeline to the licence a given business would need",
+    ],
     topics: [
       {
         id: "of_m2t1",
@@ -629,6 +661,22 @@ The Regulation came into force on **10 July 2025** (Circular 3 of 2025). The CBU
     id: "of_m3",
     title: "Technical Standards & APIs",
     subtitle: "The technology that powers Open Finance",
+    overview: `This is the engineering module. It covers the API layer that Open
+Finance runs on: FDX as the data standard, OAuth 2.0 and OpenID Connect for
+authorisation, and FAPI as the security profile that hardens both for financial
+use.
+
+You do not need to be a developer to follow it, but the security lessons repay
+close attention regardless of role — the difference between plain OAuth and FAPI
+is exactly the difference between "a login flow" and "a login flow a regulator
+will accept". The Aani lesson connects the data side to real-time payments.`,
+    objectives: [
+      "Explain how REST APIs work well enough to reason about an Open Finance integration",
+      "Describe what the FDX standard specifies and why a shared schema matters",
+      "Walk through an OAuth 2.0 authorisation code flow and say what each token is for",
+      "Explain what FAPI adds on top of OAuth and OIDC, and why financial APIs need it",
+      "Describe the Aani instant payment platform and where it fits in a service initiation flow",
+    ],
     topics: [
       {
         id: "of_m3t1",
@@ -1027,6 +1075,22 @@ When a data model changes (e.g., a new field is added), the schema is **versione
     id: "of_m4",
     title: "Security, Consent & Data Protection",
     subtitle: "Protecting customers and their data",
+    overview: `Consent is the legal foundation the entire model rests on. If consent
+is not specific, informed and revocable, then data sharing that looked compliant
+becomes a breach. This module starts there, then works outward to the UAE's PDPL,
+authentication requirements, fraud controls and what to do when something goes
+wrong.
+
+Treat the incident response lesson as operational rather than theoretical. Breach
+notification runs to a clock, and knowing the obligation before an incident is
+the difference between a controlled disclosure and a regulatory problem.`,
+    objectives: [
+      "Specify what makes consent valid, and design a consent lifecycle including revocation",
+      "Apply the UAE PDPL to a data-sharing arrangement between institutions",
+      "Explain Strong Customer Authentication and when it must be applied",
+      "Identify the fraud vectors Open Finance introduces and the controls that address them",
+      "State the breach notification obligations and sequence an incident response",
+    ],
     topics: [
       {
         id: "of_m4t1",
@@ -1366,6 +1430,22 @@ Beyond security incidents, participants must have plans for:
     id: "of_m5",
     title: "Use Cases, Business Models & Capstone",
     subtitle: "Real-world applications and strategy",
+    overview: `Everything so far has been capability. This module is about what gets
+built with it and who pays for it — aggregation and PFM, payment initiation and
+embedded finance, alternative credit and BNPL, and the extension into insurance
+and wealth.
+
+Each use case is examined for its business model, not just its mechanics: who
+captures the value, what the unit economics look like, and where the regulatory
+friction sits. The capstone asks you to assemble a coherent Open Finance strategy
+rather than recall a definition, so it rewards judgement over memory.`,
+    objectives: [
+      "Explain how account aggregation creates value and where PFM propositions typically fail commercially",
+      "Describe payment initiation and embedded finance, and the economics that make them attractive",
+      "Assess how alternative data changes credit decisioning and BNPL underwriting",
+      "Outline how Open Finance extends into insurance and wealth management",
+      "Build and defend an Open Finance strategy for a given institution",
+    ],
     topics: [
       {
         id: "of_m5t1",

@@ -12,6 +12,7 @@ export default function Sidebar({ course }) {
   const courseId = course?.id;
   const courseProg = courseId ? progress?.courses?.[courseId] : null;
   const completed = courseProg?.completed_topics || [];
+  const viaQuiz = courseProg?.quiz_completed_topics || [];
   const scores = courseProg?.quiz_scores || {};
   const totalTopics = course ? course.modules.reduce((s, m) => s + m.topics.length, 0) : 0;
   const allDone = completed.length >= totalTopics || courseProg?.unlock_all;
@@ -70,18 +71,23 @@ export default function Sidebar({ course }) {
             const quizPassed = quizScore != null && quizScore >= PASS_THRESHOLD;
             return (
               <div key={module.id} className="mb-5">
-                <div className="flex items-center gap-2 px-2 mb-2">
+                <Link
+                  to={`/course/${courseId}/module/${module.id}`}
+                  className="flex items-center gap-2 px-2 mb-2 rounded-md py-1 -mx-0.5 hover:bg-tiq-mintLight transition group/mod"
+                  title="Module overview"
+                >
                   <span className={`text-xs font-mono-tiq ${unlocked ? "text-tiq-mint" : "text-slate-400"}`}>
                     M{mi + 1}
                   </span>
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${unlocked ? "text-slate-700" : "text-slate-400"}`}>
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${unlocked ? "text-slate-700 group-hover/mod:text-tiq-ink" : "text-slate-400"}`}>
                     {module.title}
                   </span>
-                  {!unlocked && <Lock className="w-3 h-3 text-slate-400 ml-auto" />}
-                </div>
+                  {!unlocked && <Lock className="w-3 h-3 text-slate-400 ml-auto shrink-0" />}
+                </Link>
                 <ul className="space-y-0.5">
                   {module.topics.map((topic, ti) => {
                     const done = completed.includes(topic.id);
+                    const creditedByQuiz = viaQuiz.includes(topic.id);
                     const active = currentId === topic.id;
                     const score = scores[topic.id]?.percent;
                     return (
@@ -97,7 +103,14 @@ export default function Sidebar({ course }) {
                               : "text-slate-400 cursor-not-allowed"
                           }`}
                         >
-                          {done ? (
+                          {done && creditedByQuiz ? (
+                            // Covered by passing the module quiz, not by working
+                            // through the lesson — a plain green dot, no tick.
+                            <Circle
+                              className="w-4 h-4 shrink-0 text-emerald-500 fill-emerald-500/30"
+                              aria-label="Covered by module quiz"
+                            />
+                          ) : done ? (
                             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
                           ) : unlocked ? (
                             <Circle className="w-4 h-4 shrink-0 text-slate-400 group-hover:text-slate-500" />
@@ -125,8 +138,15 @@ export default function Sidebar({ course }) {
                         <ClipboardList className="w-4 h-4 shrink-0 text-slate-400 group-hover:text-tiq-mint" />
                       )}
                       <span className="truncate text-[13px] italic">Module Quiz</span>
-                      {scores[`module_${module.id}`]?.percent != null && (
-                        <span className="ml-auto text-[10px] font-mono-tiq text-slate-500">{scores[`module_${module.id}`]?.percent}%</span>
+                      {quizScore != null && (
+                        <span
+                          className={`ml-auto text-[10px] font-mono-tiq px-1.5 py-0.5 rounded shrink-0 ${
+                            quizPassed ? "bg-emerald-500/10 text-emerald-600 font-semibold" : "text-slate-500"
+                          }`}
+                          title={quizPassed ? `Passed with ${quizScore}%` : `Best score ${quizScore}% — ${PASS_THRESHOLD}% to pass`}
+                        >
+                          {quizPassed ? `Passed · ${quizScore}%` : `${quizScore}%`}
+                        </span>
                       )}
                     </Link>
                   </div>

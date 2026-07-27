@@ -131,6 +131,11 @@ export function ProgressProvider({ children }) {
       const completed = new Set(courseProg.completed_topics || []);
       if (passed) completed.add(topicId);
 
+      // Working through the topic itself supersedes having been credited for it
+      // by a module quiz, so it graduates to a fully-completed topic.
+      const viaQuiz = new Set(courseProg.quiz_completed_topics || []);
+      if (passed) viaQuiz.delete(topicId);
+
       const firstPass = new Set(courseProg.passed_first_time || []);
       if (isFirstPass) firstPass.add(topicId);
 
@@ -143,6 +148,7 @@ export function ProgressProvider({ children }) {
             ...courseProg,
             quiz_scores: newScores,
             completed_topics: Array.from(completed),
+            quiz_completed_topics: Array.from(viaQuiz),
             passed_first_time: Array.from(firstPass),
           },
         },

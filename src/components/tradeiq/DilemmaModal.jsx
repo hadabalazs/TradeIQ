@@ -56,7 +56,10 @@ export default function DilemmaModal({ course, dilemma, open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto tiq-scroll">
+      {/* On mobile the dialog was pinned to w-full, so it sat edge-to-edge with
+          square corners and no breathing room. Inset it from the viewport and
+          use dvh so browser chrome doesn't clip the scroll area. */}
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-full max-w-2xl max-h-[88dvh] overflow-y-auto tiq-scroll rounded-xl p-4 sm:p-6">
         <DialogHeader className="pr-8">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-lg">🎭</span>
