@@ -19,6 +19,26 @@ function mergeCourse(a = {}, b = {}) {
   out.completed_topics = uniq([...(a.completed_topics || []), ...(b.completed_topics || [])]);
   out.passed_first_time = uniq([...(a.passed_first_time || []), ...(b.passed_first_time || [])]);
 
+  // Topics credited by a module quiz rather than by working the lesson. This is
+  // the one field where union is WRONG: doing the lesson on either device
+  // removes the topic from the set, and that removal must win over the other
+  // device's stale membership. So keep it only where it is still unresolved on
+  // both sides — i.e. intersect, restricted to topics neither side completed
+  // outright. Otherwise a device that had tested out would keep resurrecting
+  // the plain-circle marker after the lesson was genuinely finished.
+  const viaQuizA = new Set(a.quiz_completed_topics || []);
+  const viaQuizB = new Set(b.quiz_completed_topics || []);
+  out.quiz_completed_topics = out.completed_topics.filter((id) => {
+    const inA = viaQuizA.has(id);
+    const inB = viaQuizB.has(id);
+    const knownA = (a.completed_topics || []).includes(id);
+    const knownB = (b.completed_topics || []).includes(id);
+    // A side that never saw the topic at all can't vote on how it was earned.
+    if (!knownA) return inB;
+    if (!knownB) return inA;
+    return inA && inB;
+  });
+
   // quiz_scores: keep the highest percent per topic/quiz.
   const scores = {};
   for (const key of uniq([...Object.keys(a.quiz_scores || {}), ...Object.keys(b.quiz_scores || {})])) {

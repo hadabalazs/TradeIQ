@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getCourse, getModuleQuiz, PASS_THRESHOLD, XP_PER_CORRECT, XP_FIRST_PASS_BONUS } from "@/lib/courses";
+import { getCourse, getModuleQuiz, MODULE_QUIZ_LENGTH, PASS_THRESHOLD, XP_PER_CORRECT, XP_FIRST_PASS_BONUS } from "@/lib/courses";
 import { getDilemmasForModule } from "@/lib/dilemmas";
 import { useProgress, computeActivityStreakUpdate } from "@/lib/ProgressContext";
 import QuizView from "@/components/tradeiq/QuizView";
@@ -13,10 +13,15 @@ export default function ModuleQuiz() {
   const course = getCourse(courseId);
   const moduleIndex = course ? course.modules.findIndex((m) => m.id === moduleId) : -1;
   const module = course ? course.modules[moduleIndex] : null;
-  const quiz = useMemo(() => (course ? getModuleQuiz(course, moduleIndex) : []), [course, moduleIndex]);
   const moduleDilemmas = useMemo(
     () => (course ? getDilemmasForModule(course.id, moduleIndex + 1) : []),
     [course, moduleIndex]
+  );
+  // The quiz is MODULE_QUIZ_LENGTH items in total — dilemmas take slots rather
+  // than being added on top, so the count in the header is the count you answer.
+  const quiz = useMemo(
+    () => (course ? getModuleQuiz(course, moduleIndex, MODULE_QUIZ_LENGTH - moduleDilemmas.length) : []),
+    [course, moduleIndex, moduleDilemmas.length]
   );
 
   if (!course || !module) {
@@ -54,8 +59,15 @@ export default function ModuleQuiz() {
     // that every previous-module topic is in completed_topics). This is what
     // lets a passing quiz carry you forward.
     const completed = new Set(courseProg.completed_topics || []);
+    // Track WHICH topics were credited by the quiz rather than by working
+    // through the lesson, so the sidebar can show them differently. Doing the
+    // lesson later upgrades the topic out of this set (see recordQuiz).
+    const viaQuiz = new Set(courseProg.quiz_completed_topics || []);
     if (passed) {
-      for (const t of module.topics) completed.add(t.id);
+      for (const t of module.topics) {
+        if (!completed.has(t.id)) viaQuiz.add(t.id);
+        completed.add(t.id);
+      }
     }
 
     const activityUpdate = computeActivityStreakUpdate(progress);
@@ -67,6 +79,7 @@ export default function ModuleQuiz() {
           quiz_scores: newScores,
           passed_first_time: Array.from(firstPass),
           completed_topics: Array.from(completed),
+          quiz_completed_topics: Array.from(viaQuiz),
         },
       },
       total_xp: (progress?.total_xp || 0) + xpGain,
@@ -107,7 +120,7 @@ export default function ModuleQuiz() {
           Module {moduleIndex + 1} Comprehensive Quiz
         </h1>
         <p className="text-sm text-slate-600">
-          {quiz.length} questions covering all topics in this module
+          {quiz.length + moduleDilemmas.length} questions covering all topics in this module
           {prevScore != null && (
             <span className="ml-2 text-tiq-mint font-mono-tiq">Best: {prevScore}%</span>
           )}

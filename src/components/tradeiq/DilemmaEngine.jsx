@@ -133,10 +133,12 @@ export default function DilemmaEngine({
             <button
               key={i}
               onClick={() => handleChoice(choice)}
-              className="w-full text-left px-4 py-3 rounded-lg bg-tiq-mint text-white font-medium text-sm hover:bg-tiq-mint/90 transition flex items-center justify-between"
+              className="w-full text-left px-4 py-3 rounded-lg bg-tiq-mint text-white font-medium text-sm hover:bg-tiq-mint/90 transition flex items-center justify-between gap-3"
             >
-              {choice.text}
-              <ArrowRight className="w-4 h-4" />
+              {/* min-w-0 lets long choice text wrap instead of forcing the row
+                  wider than the screen; the arrow must not be squeezed. */}
+              <span className="min-w-0">{choice.text}</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
           ))}
         </div>
@@ -185,7 +187,7 @@ export default function DilemmaEngine({
             </div>
           </div>
         )}
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <button
             onClick={handleRestart}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight hover:text-tiq-ink transition text-sm font-medium"

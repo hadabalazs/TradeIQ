@@ -8,6 +8,22 @@ export const MODULES = [
     id: "m1",
     title: "Foundations of Physical Commodity Trading",
     subtitle: "The building blocks of the physical trade",
+    overview: `Physical commodity trading has its own vocabulary, and almost every
+dispute in the business traces back to someone misreading one of these terms.
+This module gets the language straight: what actually makes something a
+tradeable commodity, who the counterparties are, and how a cargo moves from mine
+to buyer.
+
+The Incoterms and documentation lessons matter more than they look. Whether a
+trade is FOB or CIF decides who carries the risk when a vessel is delayed, and
+the Bill of Lading is what banks pay against — get these wrong and the
+accounting in later modules is built on sand.`,
+    objectives: [
+      "Distinguish a tradeable commodity from a manufactured good, and explain why that distinction drives pricing",
+      "Name the parties in a physical trade — producer, trader, broker, inspection firm, offtaker — and what each is paid for",
+      "Read an Incoterm (FOB, CIF, CFR) and state exactly where risk and cost transfer",
+      "Identify the core trade documents and explain what a bank is actually paying against",
+    ],
     topics: [
       {
         id: "m1t1",
@@ -255,6 +271,23 @@ Under a **documentary credit**, the bank pays against documents, not against the
     id: "m2",
     title: "African Coal & Sulphur Markets",
     subtitle: "Where the world's raw materials come from",
+    overview: `This module grounds the theory in the specific markets this course is
+about: South African thermal coal, Mozambican coking coal, and the sulphur trade
+that runs alongside them. These are real markets with real bottlenecks — Transnet
+rail performance and RBCT throughput move prices more than most macro news does.
+
+Pricing here is index-linked rather than negotiated from scratch, so the pricing
+lesson explains how API4, Argus and McCloskey assessments feed a cargo's final
+invoice. The compliance lesson is not optional background: sanctions and
+counterparty screening are where traders in this region get into genuine
+trouble.`,
+    objectives: [
+      "Explain Africa's position in global coal and sulphur supply, and which corridors the volume actually moves through",
+      "Describe how South African thermal coal reaches export markets and where the constraints sit",
+      "Distinguish thermal from coking coal in both use and pricing",
+      "Read an index-linked price formula and calculate a cargo price from a benchmark plus premium",
+      "Apply sanctions and due-diligence screening to a counterparty in this region",
+    ],
     topics: [
       {
         id: "m2t1",
@@ -582,6 +615,22 @@ Sulphur is typically priced on a **fixed or formula basis** off Argus/Platts ass
     id: "m3",
     title: "IFRS Foundations for Commodity Accountants",
     subtitle: "The standards that shape the numbers",
+    overview: `Five standards do most of the work in a commodity trading business:
+IFRS 15 for revenue, IFRS 9 for derivatives and hedging, IAS 2 for inventory,
+IFRS 16 for leases, and IAS 37 for provisions. This module takes them one at a
+time, in the form they actually show up in a trader's books.
+
+The emphasis is on the judgements, not the paragraph numbers. When control of a
+cargo transfers, whether a pricing clause is an embedded derivative, and what
+"net realisable value" means for coal sitting at a stockpile are all decisions
+where reasonable people disagree — and where auditors push back.`,
+    objectives: [
+      "Explain why commodity traders face harder IFRS judgements than most businesses",
+      "Apply the IFRS 15 five-step model to a physical cargo sale",
+      "Identify when a contract contains a derivative or an embedded derivative under IFRS 9",
+      "Measure inventory at the lower of cost and net realisable value under IAS 2",
+      "Recognise when IFRS 16 captures a vessel or storage arrangement, and when IAS 37 requires a provision",
+    ],
     topics: [
       {
         id: "m3t1",
@@ -877,6 +926,22 @@ Possible obligations (or present obligations not meeting recognition criteria) a
     id: "m4",
     title: "IFRS Applied to Live Trading Scenarios",
     subtitle: "Working the numbers on real trades",
+    overview: `Module 3 covered what the standards say. This one is the harder half:
+applying them to trades where the facts are messy and the answer isn't in the
+standard. Every lesson is a worked scenario — a coal shipment, a provisionally
+priced cargo, an offtake agreement with an unusual pricing clause.
+
+Expect to do arithmetic. Provisional pricing and variable consideration in
+particular require you to estimate, constrain that estimate, and then remeasure
+when the quotational period closes. This is the module that most directly mirrors
+month-end work.`,
+    objectives: [
+      "Determine the point of revenue recognition on a coal shipment and justify it against the contract terms",
+      "Account for a provisionally priced cargo, including the constraint on variable consideration",
+      "Separate an embedded derivative from its host offtake contract and measure it",
+      "Set up hedge accounting for a trader and explain what breaks hedge effectiveness",
+      "Calculate an inventory write-down and recognise an onerous contract provision",
+    ],
     topics: [
       {
         id: "m4t1",
@@ -1172,6 +1237,23 @@ IAS 37 requires that, before recognising a separate onerous-contract provision, 
     id: "m5",
     title: "Trade Finance, Compliance & Capstone",
     subtitle: "Financing, controls and the full trade cycle",
+    overview: `Physical trades are financed trades — the working capital between
+paying a producer and being paid by an offtaker is the constraint the whole
+business runs against. This module covers the instruments that bridge that gap,
+the controls that keep the business out of trouble, and the carbon reporting that
+increasingly sits alongside them.
+
+It closes with a capstone that runs a single cargo end to end: origination,
+financing, shipment, pricing, accounting and settlement. If the earlier modules
+landed, the capstone should feel like assembling parts you already have rather
+than learning something new.`,
+    objectives: [
+      "Choose an appropriate trade finance instrument for a given cargo and explain what risk it covers",
+      "Read a Letter of Credit and identify what would trigger a discrepancy",
+      "Apply AML and sanctions controls to an African commodity counterparty",
+      "Explain how carbon and environmental reporting affects a coal trading business",
+      "Work a full trade cycle end to end, from origination through to settlement and its accounting entries",
+    ],
     topics: [
       {
         id: "m5t1",

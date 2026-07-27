@@ -17,6 +17,7 @@ import FinalExam from '@/pages/FinalExam';
 import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import ModuleQuiz from '@/pages/ModuleQuiz';
+import ModuleOverview from '@/pages/ModuleOverview';
 import Admin from '@/pages/Admin';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/course/:courseId/learn/:topicId" element={<Learn />} />
                 <Route path="/course/:courseId/final" element={<FinalExam />} />
                 <Route path="/course/:courseId/practice" element={<Practice />} />
+                <Route path="/course/:courseId/module/:moduleId" element={<ModuleOverview />} />
                 <Route path="/course/:courseId/quiz/:moduleId" element={<ModuleQuiz />} />
                 <Route path="/daily" element={<Daily />} />
                 <Route path="/admin" element={<Admin />} />
