@@ -29,14 +29,20 @@ function writeCards(cards) {
 
 // ---------- Question identity ----------
 
-// Stable content hash so identical questions share one card everywhere.
-export function questionId(q) {
-  const basis = `${q.q || q.front || q.title || ""}|${q.answerText || (q.options ? q.options[q.answer] : "") || ""}`;
-  let h = 0;
-  for (let i = 0; i < basis.length; i++) {
-    h = ((h << 5) - h + basis.charCodeAt(i)) | 0;
-  }
-  return `q${(h >>> 0).toString(36)}`;
+// Re-exported from its own module so the import graph stays acyclic; see
+// questionId.js for why the hash being content-derived matters. Imported as
+// well as re-exported, since `export ... from` creates no local binding.
+import { questionId } from '@/lib/questionId';
+import { remapQuestionId } from '@/lib/questionOverrides';
+
+export { questionId };
+
+// Identity used for card storage. A question that has been corrected by an admin
+// override resolves to its replacement's id, so review history written before
+// the correction still applies afterwards — fixing a typo must not reset
+// everyone's spacing on that question.
+function cardKey(q) {
+  return remapQuestionId(questionId(q));
 }
 
 // ---------- Reviewing ----------
@@ -57,7 +63,7 @@ function reviveCard(stored) {
 }
 
 export function recordReview(question, grade) {
-  const id = questionId(question);
+  const id = cardKey(question);
   const cards = readCards();
   const now = new Date();
   const card = cards[id] ? reviveCard(cards[id]) : createEmptyCard(now);
@@ -112,7 +118,7 @@ export function collectPool(progress) {
       const found = getTopic(course, topicId);
       if (!found || !found.topic.quiz) continue;
       for (const q of found.topic.quiz) {
-        const id = questionId(q);
+        const id = cardKey(q);
         const card = cards[id] ? reviveCard(cards[id]) : null;
         pool.push({
           ...q,
@@ -183,7 +189,7 @@ export function courseMastery(course, progress) {
     if (!found || !found.topic.quiz) continue;
     for (const q of found.topic.quiz) {
       total += 1;
-      const card = cards[questionId(q)];
+      const card = cards[cardKey(q)];
       const state = masteryState(card ? reviveCard(card) : null);
       if (state === "mastered") mastered += 1;
       if (state === "fading") fading += 1;

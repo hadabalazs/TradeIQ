@@ -25,6 +25,7 @@ import { MODULES as IFRS_MODULES, FINAL_ASSESSMENT as IFRS_FINAL, GLOSSARY as IF
 import { MODULES as OF_MODULES, FINAL_ASSESSMENT as OF_FINAL, GLOSSARY as OF_GLOSSARY } from "@/lib/openfinanceCurriculum";
 import { IFRS_SORTING_QUESTIONS, OPENFINANCE_SORTING_QUESTIONS } from "@/lib/sortingQuestions";
 import { IFRS_TERM_MATCH_QUESTIONS, OPENFINANCE_TERM_MATCH_QUESTIONS } from "@/lib/termMatchQuestions";
+import { applyOverridesToCourses, indexOverrides, setOverrideIndex } from "@/lib/questionOverrides";
 
 // Merge sorting + term-match questions into each topic's quiz array at runtime
 function mergeExtraQuestions(modules, sortingMap = {}, termMatchMap = {}) {
@@ -101,11 +102,30 @@ const _builtinCourses = COURSE_DEFS.map(({ sortingQuestions, termMatchQuestions,
 // courses without any other file changing.
 export const COURSES = [..._builtinCourses];
 
+let _customCourses = [];
+
+// The single place courses are assembled. Admin question overrides are applied
+// HERE rather than at each surface, so module quizzes, topic quizzes, practice,
+// the daily/mixed review SRS pool, expert questions and the final assessment all
+// inherit suppressions and replacements automatically — there is no per-surface
+// filter to forget when a new surface is added.
+function rebuildCourses() {
+  COURSES.length = 0;
+  COURSES.push(...applyOverridesToCourses([..._builtinCourses, ..._customCourses]));
+}
+
 // Sync custom courses (loaded from the CustomCourse entity by CoursesContext)
 // into the COURSES array. Rebuilds the array from built-in + custom each time.
 export function syncCustomCourses(customCourses) {
-  COURSES.length = 0;
-  COURSES.push(..._builtinCourses, ...customCourses);
+  _customCourses = customCourses;
+  rebuildCourses();
+}
+
+// Called once overrides have been read from Supabase, and again whenever an
+// admin suppresses, reinstates or replaces a question.
+export function applyQuestionOverrides(rows) {
+  setOverrideIndex(indexOverrides(rows || []));
+  rebuildCourses();
 }
 
 export function getCourse(courseId) {

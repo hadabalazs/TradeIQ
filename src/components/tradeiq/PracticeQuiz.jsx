@@ -12,6 +12,7 @@ import { PASS_THRESHOLD } from "@/lib/courses";
 import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 import RecallPopup from "@/components/tradeiq/RecallPopup";
+import FlagQuestion from "@/components/tradeiq/FlagQuestion";
 import { recordReview, Grades } from "@/lib/srs";
 
 // Delay before auto-advancing after a wrong answer, so the learner sees the
@@ -225,6 +226,14 @@ export default function PracticeQuiz({
         <div className="flex-1 h-1 bg-tiq-mintLight rounded-full mx-3 overflow-hidden">
           <div className="h-full bg-tiq-mint transition-all" style={{ width: `${progressPct}%` }} />
         </div>
+        {/* Review questions carry their origin on the question itself, since a
+            session mixes topics and courses. */}
+        <FlagQuestion
+          question={question}
+          courseId={question._courseId}
+          topicId={question._topicId}
+          className="shrink-0"
+        />
       </div>
 
       {questionType === "multiple-choice" && (

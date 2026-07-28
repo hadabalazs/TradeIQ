@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { COURSES, syncCustomCourses } from '@/lib/courses';
+import { COURSES, syncCustomCourses, applyQuestionOverrides } from '@/lib/courses';
+import { fetchOverrides } from '@/lib/questionOverrides';
 import { generateFinalAssessment } from '@/lib/courseUtils';
 import { listCustomCourses } from '@/lib/localStore';
 import { fetchCatalog, cachedCatalog, downloadCourse, removeDownloadedCourse, downloadedCourseIds } from '@/lib/remoteCourses';
@@ -58,7 +59,26 @@ export function CoursesProvider({ children }) {
     loadDownloaded();
     // Refresh the remote catalog in the background (best effort — offline is fine)
     fetchCatalog().then(setCatalog).catch(() => {});
+    // Admin question corrections. Read for everyone including guests — a
+    // suppressed question must stay hidden regardless of who is looking. Failure
+    // (offline, or the migration not yet run) leaves courses exactly as shipped.
+    fetchOverrides()
+      .then((rows) => {
+        if (!rows) return;
+        applyQuestionOverrides(rows);
+        forceRender((n) => n + 1);
+      })
+      .catch(() => {});
   }, [loadDownloaded]);
+
+  // Re-read overrides after an admin changes one, so the correction is live
+  // without a reload.
+  const refreshOverrides = useCallback(async () => {
+    const rows = await fetchOverrides();
+    if (!rows) return;
+    applyQuestionOverrides(rows);
+    forceRender((n) => n + 1);
+  }, []);
 
   const download = useCallback(async (courseId) => {
     await downloadCourse(courseId);
@@ -90,6 +110,7 @@ export function CoursesProvider({ children }) {
       downloadedIds,
       downloadCourse: download,
       removeDownload,
+      refreshOverrides,
     }}>
       {children}
     </CoursesContext.Provider>
