@@ -8,6 +8,7 @@ import { notifyDataChanged } from "@/lib/sync";
 import CurriculumExport from "@/components/admin/CurriculumExport";
 import AddCourse from "@/components/admin/AddCourse";
 import CourseManager from "@/components/admin/CourseManager";
+import FlaggedQuestions from "@/components/admin/FlaggedQuestions";
 
 const DATA_KEYS = [
   "tradeiq_profile",
@@ -129,6 +130,7 @@ export default function Admin() {
       </div>
 
       <div className="mt-6">
+        <FlaggedQuestions />
         <AddCourse />
         <CourseManager />
         <CurriculumExport />

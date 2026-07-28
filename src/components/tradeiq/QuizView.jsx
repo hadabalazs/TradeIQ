@@ -5,6 +5,7 @@ import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/compo
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 import InlineDilemma from "@/components/tradeiq/InlineDilemma";
 import RecallPopup from "@/components/tradeiq/RecallPopup";
+import FlagQuestion from "@/components/tradeiq/FlagQuestion";
 import { recordReview, Grades } from "@/lib/srs";
 
 function interleaveDilemmas(questions, dilemmas) {
@@ -139,6 +140,14 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
         <div className="flex-1 h-1 bg-tiq-mintLight rounded-full mx-3 overflow-hidden">
           <div className="h-full bg-tiq-mint transition-all" style={{ width: `${((current) / shuffledQuiz.length) * 100}%` }} />
         </div>
+        {questionType !== "dilemma" && (
+          <FlagQuestion
+            question={question}
+            courseId={course?.id}
+            topicId={question._topicId || topic?.id}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       {questionType === "multiple-choice" && (
