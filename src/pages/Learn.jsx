@@ -108,6 +108,8 @@ export default function Learn() {
       ) : (
         <QuizView
           topic={topic}
+          course={course}
+          module={module}
           onComplete={handleQuizComplete}
           onBackToLesson={() => {
             if (isLastInModule) navigate(`/course/${courseId}/quiz/${module.id}`);
