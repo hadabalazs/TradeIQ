@@ -30,6 +30,9 @@ const DEFAULT_PROGRESS = {
   streak_count: 0,
   best_streak: 0,
   daily_history: [],
+  // Every day with any study activity. daily_history is the narrower "completed
+  // the Daily Recap" set; the calendar shows both.
+  active_history: [],
   last_daily_date: null,
   last_active_date: null,
   srs_data: {},
@@ -277,7 +280,23 @@ export function computeActivityStreakUpdate(progress) {
   }
   const bestStreak = Math.max(newStreak, progress.best_streak || 0);
 
-  return { streak_count: newStreak, best_streak: bestStreak, last_active_date: today, ...shieldUpdate };
+  // Record the day itself, not just the counter. The streak calendar used to
+  // read daily_history, which is only written when a Daily Recap is completed —
+  // so a learner with a live streak built from lessons and quizzes saw an empty
+  // calendar. Seeded from daily_history so days earned before this existed still
+  // show up.
+  const priorDays = progress.active_history?.length
+    ? progress.active_history
+    : (progress.daily_history || []);
+  const activeHistory = Array.from(new Set([...priorDays, today])).sort();
+
+  return {
+    streak_count: newStreak,
+    best_streak: bestStreak,
+    last_active_date: today,
+    active_history: activeHistory,
+    ...shieldUpdate,
+  };
 }
 
 // Compute SRS update for a specific topic based on correctness

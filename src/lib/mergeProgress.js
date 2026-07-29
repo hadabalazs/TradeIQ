@@ -81,6 +81,7 @@ export function mergeProgress(a, b) {
     best_streak: Math.max(a.best_streak || 0, b.best_streak || 0),
     // history: union of active/daily days; keep the latest markers.
     daily_history: uniq([...(a.daily_history || []), ...(b.daily_history || [])]).sort(),
+    active_history: uniq([...(a.active_history || []), ...(b.active_history || [])]).sort(),
     last_daily_date: [a.last_daily_date, b.last_daily_date].filter(Boolean).sort().pop() || null,
     last_active_date: [a.last_active_date, b.last_active_date].filter(Boolean).sort().pop() || null,
     shield_used_week: [a.shield_used_week, b.shield_used_week].filter(Boolean).sort().pop() || undefined,

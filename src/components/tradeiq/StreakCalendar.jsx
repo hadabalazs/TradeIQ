@@ -12,7 +12,11 @@ import {
   isToday,
 } from "date-fns";
 
-export default function StreakCalendar({ history = [], streak = 0, bestStreak = 0 }) {
+// `history` is days a Daily Recap was completed; `activeDays` is every day with
+// any study activity. Both are shown, because a streak is built from activity —
+// showing only recap days left learners with a live streak staring at an empty
+// calendar.
+export default function StreakCalendar({ history = [], activeDays = [], streak = 0, bestStreak = 0 }) {
   const [month, setMonth] = useState(new Date());
 
   const monthStart = startOfMonth(month);
@@ -27,7 +31,10 @@ export default function StreakCalendar({ history = [], streak = 0, bestStreak = 
     day = addDays(day, 1);
   }
 
-  const isCompleted = (d) => history.includes(format(d, "yyyy-MM-dd"));
+  const recapDays = new Set(history);
+  const studyDays = new Set(activeDays);
+  const isRecap = (d) => recapDays.has(format(d, "yyyy-MM-dd"));
+  const isStudied = (d) => studyDays.has(format(d, "yyyy-MM-dd"));
 
   return (
     <div className="bg-white rounded-xl border border-tiq-border p-5">
@@ -64,19 +71,22 @@ export default function StreakCalendar({ history = [], streak = 0, bestStreak = 
 
       <div className="grid grid-cols-7 gap-1">
         {days.map((d, i) => {
-          const completed = isCompleted(d);
+          const recap = isRecap(d);
+          const studied = isStudied(d);
           const inMonth = isSameMonth(d, month);
           const today = isToday(d);
+          let style;
+          if (recap) style = "bg-tiq-mint text-white font-bold";
+          else if (studied) style = "bg-tiq-mint/25 text-tiq-ink font-semibold";
+          else if (inMonth) style = "bg-tiq-mintLight/50 text-slate-600";
+          else style = "text-slate-300";
           return (
             <div
               key={i}
-              className={`aspect-square flex items-center justify-center text-xs rounded-md transition ${
-                completed
-                  ? "bg-tiq-mint text-white font-bold"
-                  : inMonth
-                  ? "bg-tiq-mintLight/50 text-slate-600"
-                  : "text-slate-300"
-              } ${today ? "ring-2 ring-tiq-mint/50" : ""}`}
+              title={recap ? "Daily Recap completed" : studied ? "Studied" : undefined}
+              className={`aspect-square flex items-center justify-center text-xs rounded-md transition ${style} ${
+                today ? "ring-2 ring-tiq-mint/50" : ""
+              }`}
             >
               {format(d, "d")}
             </div>
@@ -84,7 +94,16 @@ export default function StreakCalendar({ history = [], streak = 0, bestStreak = 
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-tiq-border flex items-center justify-between text-xs">
+      <div className="mt-3 flex items-center gap-3 text-[10px] text-slate-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-tiq-mint inline-block" /> Recap done
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-tiq-mint/25 inline-block" /> Studied
+        </span>
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-tiq-border flex items-center justify-between text-xs">
         <span className="text-orange-500 font-mono-tiq font-bold flex items-center gap-1">
           <Flame className="w-3.5 h-3.5" /> {streak} day streak
         </span>
