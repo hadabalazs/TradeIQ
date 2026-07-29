@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Flag, Check, X } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +14,11 @@ import { submitFlag, flaggingAvailable, FLAG_REASONS } from "@/lib/questionFlags
 export default function FlagQuestion({ question, courseId, moduleId, topicId, className = "" }) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const params = useParams();
+  // Every quiz surface lives under /course/:courseId/..., so the route is a
+  // reliable fallback when a caller forgets to thread the course down. Without
+  // it a missing prop surfaced as a raw not-null constraint error from Postgres.
+  const resolvedCourseId = courseId || params.courseId || question?._courseId || null;
   const [available, setAvailable] = useState(false);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("incorrect");
@@ -26,12 +32,22 @@ export default function FlagQuestion({ question, courseId, moduleId, topicId, cl
     return () => { alive = false; };
   }, [isAuthenticated]);
 
-  if (!isAuthenticated || !available || !question) return null;
+  // No course to attribute the report to means the flag could never be reviewed
+  // in context — hide the affordance rather than offer an action that fails.
+  if (!isAuthenticated || !available || !question || !resolvedCourseId) return null;
 
   const send = async () => {
     setSaving(true);
     try {
-      await submitFlag({ question, courseId, moduleId, topicId, reason, note, userId: user.id });
+      await submitFlag({
+        question,
+        courseId: resolvedCourseId,
+        moduleId: moduleId || question?._moduleId || null,
+        topicId: topicId || question?._topicId || null,
+        reason,
+        note,
+        userId: user.id,
+      });
       setSent(true);
       setOpen(false);
       setNote("");

@@ -34,6 +34,10 @@ export async function flaggingAvailable() {
 
 export async function submitFlag({ question, courseId, moduleId, topicId, reason, note, userId }) {
   if (!userId) throw new Error('Sign in to report a question');
+  // Fail with something meaningful rather than letting a missing value surface
+  // as a raw not-null constraint violation from Postgres.
+  if (!courseId) throw new Error('Could not tell which course this question belongs to');
+  if (!question) throw new Error('No question to report');
   const { error } = await supabase.from('question_flags').insert({
     question_id: questionId(question),
     course_id: courseId,

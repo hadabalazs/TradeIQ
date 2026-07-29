@@ -19,7 +19,7 @@ function interleaveDilemmas(questions, dilemmas) {
   return result;
 }
 
-export default function QuizView({ topic, onComplete, onBackToLesson, onContinue, continueLabel, dilemmas, course }) {
+export default function QuizView({ topic, onComplete, onBackToLesson, onContinue, continueLabel, dilemmas, course, module }) {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
@@ -144,6 +144,7 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
           <FlagQuestion
             question={question}
             courseId={course?.id}
+            moduleId={module?.id}
             topicId={question._topicId || topic?.id}
             className="shrink-0"
           />
