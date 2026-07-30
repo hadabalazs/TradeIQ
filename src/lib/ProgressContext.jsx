@@ -17,6 +17,11 @@ function defaultCourseProgress() {
     certified: false,
     final_assessment_score: 0,
     unlock_all: false,
+    // Explicit opt-in to a course. Replaces the old knowledge-level prompt,
+    // which recorded an answer nothing ever read. Drives the "My Courses"
+    // section on the catalog.
+    enrolled: false,
+    enrolled_at: null,
     knowledge_level: "beginner",
     level_set: false,
   };

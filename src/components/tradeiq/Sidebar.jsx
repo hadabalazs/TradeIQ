@@ -42,6 +42,16 @@ export default function Sidebar({ course }) {
         >
           <Flame className="w-4 h-4" /> Daily Recap
         </Link>
+        <Link
+          to="/achievements"
+          className={`flex items-center gap-2 px-2.5 py-2 rounded-md text-sm transition ${
+            location.pathname === "/achievements"
+              ? "bg-tiq-mint/10 text-tiq-mint font-medium"
+              : "text-slate-600 hover:bg-tiq-mintLight hover:text-tiq-ink"
+          }`}
+        >
+          <Award className="w-4 h-4" /> My Achievements
+        </Link>
         {course && (
           <Link
             to={`/course/${courseId}/practice`}

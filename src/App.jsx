@@ -18,6 +18,7 @@ import Practice from '@/pages/Practice';
 import Daily from '@/pages/Daily';
 import ModuleQuiz from '@/pages/ModuleQuiz';
 import ModuleOverview from '@/pages/ModuleOverview';
+import Achievements from '@/pages/Achievements';
 import Admin from '@/pages/Admin';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
@@ -46,6 +47,7 @@ function App() {
                 <Route path="/course/:courseId/module/:moduleId" element={<ModuleOverview />} />
                 <Route path="/course/:courseId/quiz/:moduleId" element={<ModuleQuiz />} />
                 <Route path="/daily" element={<Daily />} />
+                <Route path="/achievements" element={<Achievements />} />
                 <Route path="/admin" element={<Admin />} />
               </Route>
 

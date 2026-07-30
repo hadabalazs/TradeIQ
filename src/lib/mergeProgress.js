@@ -50,6 +50,10 @@ function mergeCourse(a = {}, b = {}) {
 
   out.certified = !!(a.certified || b.certified);
   out.unlock_all = !!(a.unlock_all || b.unlock_all);
+  // Enrolling on any device enrols you everywhere; keep the earliest date.
+  out.enrolled = !!(a.enrolled || b.enrolled);
+  out.enrolled_at =
+    [a.enrolled_at, b.enrolled_at].filter(Boolean).sort()[0] || null;
   out.final_assessment_score = Math.max(a.final_assessment_score || 0, b.final_assessment_score || 0);
   // knowledge_level / level_set: prefer whichever has been explicitly set.
   out.level_set = !!(a.level_set || b.level_set);
