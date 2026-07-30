@@ -5,7 +5,22 @@ export default function GlossaryPanel({ open, onClose, course }) {
   const [query, setQuery] = useState("");
   const [openTerms, setOpenTerms] = useState(new Set());
 
-  const glossary = course?.glossary || [];
+  // Dedupe by term. Rows are keyed by term and the expand/collapse state is too,
+  // so a repeated term produced duplicate React keys AND made one row's toggle
+  // expand both. Course content is authored by hand and by generators, so guard
+  // here rather than trusting every curriculum to be clean. Keeps the fullest
+  // definition when a term appears more than once.
+  const glossary = React.useMemo(() => {
+    const byTerm = new Map();
+    for (const entry of course?.glossary || []) {
+      if (!entry?.term) continue;
+      const existing = byTerm.get(entry.term);
+      if (!existing || (entry.def || "").length > (existing.def || "").length) {
+        byTerm.set(entry.term, entry);
+      }
+    }
+    return [...byTerm.values()];
+  }, [course?.glossary]);
 
   const filtered = glossary.filter(
     (g) =>

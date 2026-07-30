@@ -1,13 +1,7 @@
 import React, { useState } from "react";
-import { Settings, ChevronDown, Moon, Sun, GraduationCap, Briefcase, TrendingUp, Check, LockOpen, RotateCcw } from "lucide-react";
+import { Settings, ChevronDown, Moon, Sun, LockOpen, RotateCcw } from "lucide-react";
 import { useProgress } from "@/lib/ProgressContext";
 import { useTheme } from "@/lib/ThemeContext";
-
-const LEVELS = [
-  { id: "beginner", label: "Beginner", icon: GraduationCap },
-  { id: "some_finance", label: "Some Finance", icon: Briefcase },
-  { id: "experienced", label: "Experienced", icon: TrendingUp },
-];
 
 export default function SettingsPanel({ course }) {
   const { progress, save, resetProgress, resetCourseProgress } = useProgress();
@@ -20,10 +14,6 @@ export default function SettingsPanel({ course }) {
     if (name.trim() && name.trim() !== progress?.user_name) {
       save({ user_name: name.trim() });
     }
-  };
-
-  const updateLevel = (level) => {
-    save({ knowledge_level: level });
   };
 
   const handleReset = () => {
@@ -60,31 +50,6 @@ export default function SettingsPanel({ course }) {
               onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
               className="w-full px-2.5 py-1.5 text-sm rounded-md bg-tiq-mintLight border border-tiq-border text-tiq-ink focus:outline-none focus:border-tiq-mint/50"
             />
-          </div>
-          {/* Level */}
-          <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1 px-1">Experience level</label>
-            <div className="space-y-1">
-              {LEVELS.map((l) => {
-                const Icon = l.icon;
-                const active = (progress?.knowledge_level || "beginner") === l.id;
-                return (
-                  <button
-                    key={l.id}
-                    onClick={() => updateLevel(l.id)}
-                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition ${
-                      active
-                        ? "bg-tiq-mint/10 text-tiq-mint font-medium"
-                        : "text-slate-600 hover:bg-tiq-mintLight hover:text-tiq-ink"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    {l.label}
-                    {active && <Check className="w-3.5 h-3.5 ml-auto" />}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           {/* Dark mode toggle */}
           <div className="flex items-center justify-between px-2.5 py-1.5">
