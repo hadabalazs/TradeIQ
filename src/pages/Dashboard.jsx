@@ -5,7 +5,7 @@ import { courseMastery, retentionScore } from "@/lib/srs";
 import { getCourse } from "@/lib/courses";
 import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
 import ModuleCard from "@/components/tradeiq/ModuleCard";
-import CourseLevelSelector from "@/components/tradeiq/CourseLevelSelector";
+import EnrollCourse from "@/components/tradeiq/EnrollCourse";
 import DilemmaCard from "@/components/tradeiq/DilemmaCard";
 import DilemmaModal from "@/components/tradeiq/DilemmaModal";
 import Certificate from "@/components/tradeiq/Certificate";
@@ -40,7 +40,10 @@ export default function Dashboard() {
   const mastery = courseMastery(course, progress);
   const retention = retentionScore();
   const allDone = completed.length >= totalTopics || courseProg.unlock_all;
-  const needsLevel = !courseProg.level_set;
+  // Treat any prior activity as enrolled, so existing learners are not asked
+  // to enrol in a course they are part-way through.
+  const hasActivity = completed.length > 0 || Object.keys(courseProg.quiz_scores || {}).length > 0;
+  const needsEnroll = !courseProg.enrolled && !hasActivity;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -58,7 +61,7 @@ export default function Dashboard() {
       </div>
 
       {/* Per-course proficiency selector */}
-      {needsLevel && <CourseLevelSelector course={course} />}
+      {needsEnroll && <EnrollCourse course={course} />}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">

@@ -6,7 +6,7 @@ import { useCourses } from "@/lib/CoursesContext";
 import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
 import Logo from "@/components/tradeiq/Logo";
 import { useAuth } from "@/lib/AuthContext";
-import { Cloud, Download, Loader2, WifiOff } from "lucide-react";
+import { Cloud, Download, Loader2, WifiOff, Compass } from "lucide-react";
 import TodaysDilemma from "@/components/tradeiq/TodaysDilemma";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -50,6 +50,86 @@ export default function CourseCatalog() {
     setSuggestion("");
     setSuggesting(false);
     setSending(false);
+  };
+
+  // "Mine" means explicitly enrolled OR already under way — existing learners
+  // never clicked an Enroll button, so activity has to count as enrolment or
+  // their in-progress courses would sit in the browse list.
+  const isMine = (course) => {
+    const cp = progress?.courses?.[course.id];
+    if (!cp) return false;
+    return (
+      !!cp.enrolled ||
+      (cp.completed_topics || []).length > 0 ||
+      Object.keys(cp.quiz_scores || {}).length > 0 ||
+      !!cp.certified
+    );
+  };
+
+  const myCourses = courses.filter(isMine);
+  const otherCourses = courses.filter((c) => !isMine(c));
+
+  // One card definition, used by both My Courses and the browse list, so the
+  // two sections can never drift apart visually.
+  const renderCourseCard = (course) => {
+    const Icon = ICONS[course.icon] || BookOpen;
+    const courseProg = progress?.courses?.[course.id];
+    const completed = courseProg?.completed_topics || [];
+    const pct = overallPercent(course, completed);
+    const totalTopics = course.modules.reduce((s, m) => s + m.topics.length, 0);
+    const certified = courseProg?.certified;
+    const nextStep = getNextStep(course, completed, courseProg?.quiz_scores);
+    const continueHref = nextStep
+      ? nextStep.type === "lesson"
+        ? `/course/${course.id}/learn/${nextStep.topic.id}`
+        : `/course/${course.id}/quiz/${nextStep.module.id}`
+      : `/course/${course.id}`;
+
+    return (
+      <Link
+        key={course.id}
+        to={continueHref}
+        className="block rounded-xl bg-white border border-tiq-border hover:border-tiq-mint/40 transition group overflow-hidden"
+      >
+        <div className={`bg-gradient-to-br ${course.gradient} p-6`}>
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-12 h-12 rounded-lg bg-white/80 flex items-center justify-center shrink-0">
+              <Icon className="w-6 h-6 text-tiq-mint" />
+            </div>
+            {certified && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                <Award className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-xs font-medium text-emerald-600">Certified</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-mono-tiq text-tiq-mint bg-tiq-mint/10 px-2 py-0.5 rounded uppercase tracking-wider">
+              {course.category}
+            </span>
+            <span className="text-[10px] text-slate-500">· {course.level}</span>
+          </div>
+          <h3 className="font-slab text-tiq-ink font-bold text-lg leading-tight mb-1">{course.title}</h3>
+          <p className="text-sm text-slate-600 line-clamp-2">{course.description}</p>
+        </div>
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 h-1.5 bg-tiq-mintLight rounded-full overflow-hidden">
+              <div className="h-full bg-tiq-mint rounded-full transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs font-mono-tiq text-slate-500">{pct}%</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">
+              {course.modules.length} modules · {totalTopics} topics
+            </span>
+            <span className="flex items-center gap-1 text-sm text-tiq-mint font-medium group-hover:gap-2 transition-all">
+              {pct > 0 ? "Continue" : "Start"} <ArrowRight className="w-4 h-4" />
+            </span>
+          </div>
+        </div>
+      </Link>
+    );
   };
 
   return (
@@ -139,73 +219,34 @@ export default function CourseCatalog() {
         </div>
       </Link>
 
+      {/* My Courses — enrolled, or already under way. Kept separate so the
+          courses you are actually working through are not buried among the ones
+          you have never opened. */}
+      {myCourses.length > 0 && (
+        <>
+          <div className="mb-4 flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-tiq-mint" />
+            <h2 className="font-slab text-xl text-tiq-ink font-bold">My Courses</h2>
+            <span className="text-xs font-mono-tiq text-slate-500">{myCourses.length}</span>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-5 mb-12">
+            {myCourses.map((course) => renderCourseCard(course))}
+          </div>
+        </>
+      )}
+
       {/* Courses */}
+      {otherCourses.length > 0 && (
       <div className="mb-4 flex items-center gap-2">
-        <GraduationCap className="w-5 h-5 text-tiq-mint" />
-        <h2 className="font-slab text-xl text-tiq-ink font-bold">Available Courses</h2>
+        <Compass className="w-5 h-5 text-tiq-mint" />
+        <h2 className="font-slab text-xl text-tiq-ink font-bold">
+          {myCourses.length > 0 ? "Browse Other Courses" : "Available Courses"}
+        </h2>
       </div>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-5">
-        {courses.map((course) => {
-          const Icon = ICONS[course.icon] || BookOpen;
-          const courseProg = progress?.courses?.[course.id];
-          const completed = courseProg?.completed_topics || [];
-          const pct = overallPercent(course, completed);
-          const totalTopics = course.modules.reduce((s, m) => s + m.topics.length, 0);
-          const certified = courseProg?.certified;
-          const nextStep = getNextStep(course, completed, courseProg?.quiz_scores);
-          const continueHref = nextStep
-            ? nextStep.type === "lesson"
-              ? `/course/${course.id}/learn/${nextStep.topic.id}`
-              : `/course/${course.id}/quiz/${nextStep.module.id}`
-            : `/course/${course.id}`;
-
-          return (
-            <Link
-              key={course.id}
-              to={continueHref}
-              className="block rounded-xl bg-white border border-tiq-border hover:border-tiq-mint/40 transition group overflow-hidden"
-            >
-              <div className={`bg-gradient-to-br ${course.gradient} p-6`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-12 h-12 rounded-lg bg-white/80 flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6 text-tiq-mint" />
-                  </div>
-                  {certified && (
-                    <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
-                      <Award className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-xs font-medium text-emerald-600">Certified</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono-tiq text-tiq-mint bg-tiq-mint/10 px-2 py-0.5 rounded uppercase tracking-wider">
-                    {course.category}
-                  </span>
-                  <span className="text-[10px] text-slate-500">· {course.level}</span>
-                </div>
-                <h3 className="font-slab text-tiq-ink font-bold text-lg leading-tight mb-1">{course.title}</h3>
-                <p className="text-sm text-slate-600 line-clamp-2">{course.description}</p>
-              </div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-1.5 bg-tiq-mintLight rounded-full overflow-hidden">
-                    <div className="h-full bg-tiq-mint rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="text-xs font-mono-tiq text-slate-500">{pct}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">
-                    {course.modules.length} modules · {totalTopics} topics
-                  </span>
-                  <span className="flex items-center gap-1 text-sm text-tiq-mint font-medium group-hover:gap-2 transition-all">
-                    {pct > 0 ? "Continue" : "Start"} <ArrowRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+        {otherCourses.map((course) => renderCourseCard(course))}
       </div>
 
       {/* More courses — download on demand */}

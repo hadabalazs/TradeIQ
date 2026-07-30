@@ -162,18 +162,33 @@ export function buildDailyQueue(progress, cap = 12) {
   return interleaveByTopic(selected.map(shuffleQuestionOptions));
 }
 
-// Mixed Review: cross-course interleaved session, weakest first, format-diverse.
-export function buildMixedReview(progress, cap = 15) {
-  const pool = collectPool(progress);
-  const ranked = pool
-    .sort((a, b) => a._retrievability - b._retrievability)
-    .slice(0, Math.min(cap * 2, pool.length));
-  const selected = ranked.sort(() => Math.random() - 0.5).slice(0, Math.min(cap, ranked.length));
+export function dueCount(progress) {
+  return collectPool(progress).filter((q) => q._due).length;
+}
+
+// Same selection rule as the global recap, restricted to one course — for
+// learners who want to revise a single subject rather than everything at once.
+export function buildCourseQueue(progress, courseId, cap = 12) {
+  const pool = collectPool(progress).filter((q) => q._courseId === courseId);
+  const shuffle = (a) => a.sort(() => Math.random() - 0.5);
+  const due = pool.filter((q) => q._due).sort((a, b) => a._retrievability - b._retrievability);
+  const fresh = shuffle(pool.filter((q) => q._isNew));
+  const rest = shuffle(pool.filter((q) => !q._due && !q._isNew));
+  const selected = [...due, ...fresh, ...rest].slice(0, Math.min(cap, pool.length));
   return interleaveByTopic(selected.map(shuffleQuestionOptions));
 }
 
-export function dueCount(progress) {
-  return collectPool(progress).filter((q) => q._due).length;
+// Per-course totals for the recap list: how much is available and how much is
+// actually due right now.
+export function courseQueueStats(progress) {
+  const stats = new Map();
+  for (const q of collectPool(progress)) {
+    const s = stats.get(q._courseId) || { total: 0, due: 0 };
+    s.total += 1;
+    if (q._due) s.due += 1;
+    stats.set(q._courseId, s);
+  }
+  return stats;
 }
 
 // ---------- Course / dashboard stats ----------

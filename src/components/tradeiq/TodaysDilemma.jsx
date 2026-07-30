@@ -42,7 +42,29 @@ export default function TodaysDilemma() {
     return pool[dayOfYear % pool.length];
   }, [activeCourse, isCompleted, loading]);
 
-  if (loading || !todaysDilemma) return null;
+  // Render a same-height placeholder while loading instead of nothing. Returning
+  // null here collapsed the card and then re-expanded it once the dilemma
+  // resolved, shoving everything below it down the page — which read as the
+  // Daily Recap card disappearing and reappearing.
+  if (loading) {
+    return (
+      <div
+        className="mb-8 p-5 rounded-xl border border-tiq-border bg-tiq-mintLight/40 animate-pulse"
+        aria-hidden="true"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-tiq-mint/10 shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-24 rounded bg-tiq-mint/10" />
+            <div className="h-4 w-2/3 rounded bg-tiq-mint/10" />
+            <div className="h-3 w-1/3 rounded bg-tiq-mint/10" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!todaysDilemma) return null;
 
   const completed = isCompleted(activeCourse.id, todaysDilemma.id);
 

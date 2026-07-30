@@ -1886,7 +1886,6 @@ export const GLOSSARY = [
   { term: "REST API", def: "Representational State Transfer API — a common API architecture using HTTP methods (GET, POST, PUT, DELETE) and resource-oriented URLs. Open Finance APIs are typically RESTful." },
   { term: "SCA (Strong Customer Authentication)", def: "A regulatory requirement for two or more independent authentication factors (knowledge, possession, inherence) before authorising payments or data sharing in Open Finance." },
   { term: "Service Initiation", def: "A UAE-specific concept allowing authorised third parties to trigger financial services beyond payments — including investment orders, insurance applications, and savings automation. Enables embedded finance." },
-  { term: "Service Initiation", def: "A UAE-specific concept allowing authorised third parties to trigger financial services beyond payments — including investment orders, insurance applications, and savings automation." },
   { term: "TPP (Third Party Provider)", def: "An authorised fintech or service provider that consumes Open Finance APIs to build services for customers. Licensed and regulated by the CBUAE. Includes AISPs and PISPs." },
   { term: "Trust Framework", def: "A component of the UAE's Open Finance framework providing participant validation, identity verification, data security, and standardised authentication through digital certificates and a compliance registry." }
 ];
