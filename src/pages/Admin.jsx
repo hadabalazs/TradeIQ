@@ -9,6 +9,7 @@ import CurriculumExport from "@/components/admin/CurriculumExport";
 import AddCourse from "@/components/admin/AddCourse";
 import CourseManager from "@/components/admin/CourseManager";
 import FlaggedQuestions from "@/components/admin/FlaggedQuestions";
+import CourseTextEditor from "@/components/admin/CourseTextEditor";
 
 const DATA_KEYS = [
   "tradeiq_profile",
@@ -129,7 +130,8 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-6">
+        <CourseTextEditor />
         <FlaggedQuestions />
         <AddCourse />
         <CourseManager />

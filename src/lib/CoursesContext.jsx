@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { COURSES, syncCustomCourses, applyQuestionOverrides } from '@/lib/courses';
+import { COURSES, syncCustomCourses, applyQuestionOverrides, applyCourseTextOverrides } from '@/lib/courses';
 import { fetchOverrides } from '@/lib/questionOverrides';
+import { fetchCourseOverrides } from '@/lib/courseOverrides';
 import { generateFinalAssessment } from '@/lib/courseUtils';
 import { listCustomCourses } from '@/lib/localStore';
 import { fetchCatalog, cachedCatalog, downloadCourse, removeDownloadedCourse, downloadedCourseIds } from '@/lib/remoteCourses';
@@ -69,6 +70,15 @@ export function CoursesProvider({ children }) {
         forceRender((n) => n + 1);
       })
       .catch(() => {});
+    // Admin-edited course text. Same reasoning: read for everyone, since a
+    // renamed course must read the same for guests as for signed-in users.
+    fetchCourseOverrides()
+      .then((rows) => {
+        if (!rows) return;
+        applyCourseTextOverrides(rows);
+        forceRender((n) => n + 1);
+      })
+      .catch(() => {});
   }, [loadDownloaded]);
 
   // Re-read overrides after an admin changes one, so the correction is live
@@ -77,6 +87,14 @@ export function CoursesProvider({ children }) {
     const rows = await fetchOverrides();
     if (!rows) return;
     applyQuestionOverrides(rows);
+    forceRender((n) => n + 1);
+  }, []);
+
+  // Re-read course text after an admin edit, so a rename is live without a reload.
+  const refreshCourseText = useCallback(async () => {
+    const rows = await fetchCourseOverrides();
+    if (!rows) return;
+    applyCourseTextOverrides(rows);
     forceRender((n) => n + 1);
   }, []);
 
@@ -111,6 +129,7 @@ export function CoursesProvider({ children }) {
       downloadCourse: download,
       removeDownload,
       refreshOverrides,
+      refreshCourseText,
     }}>
       {children}
     </CoursesContext.Provider>
