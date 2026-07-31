@@ -51,7 +51,10 @@ export default function Certificate({ course, name, score, date, preview = false
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const courseName = course?.title || "TradeIQ Course";
+  // The certificate can carry a different name from the catalog — a formal
+  // qualification title rather than the browsing title. Falls back to the course
+  // title when not set, so renaming a course carries through by default.
+  const courseName = course?.certificateTitle || course?.title || "TradeIQ Course";
   const certText = course?.certificateText || "has successfully completed the TradeIQ curriculum";
 
   const formattedDate = date
