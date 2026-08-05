@@ -13,6 +13,16 @@ function uniq(arr) {
   return Array.from(new Set(arr || []));
 }
 
+// Assessment history entries are objects, so Set-based uniq won't collapse the
+// same run recorded on two devices. Key on the timestamp instead.
+function dedupeByDate(entries) {
+  const byDate = new Map();
+  for (const e of entries) {
+    if (e?.date) byDate.set(e.date, e);
+  }
+  return [...byDate.values()].sort((x, y) => String(x.date).localeCompare(String(y.date))).slice(-20);
+}
+
 // Merge two per-course progress objects.
 function mergeCourse(a = {}, b = {}) {
   const out = { ...a, ...b };
@@ -86,6 +96,17 @@ export function mergeProgress(a, b) {
     // history: union of active/daily days; keep the latest markers.
     daily_history: uniq([...(a.daily_history || []), ...(b.daily_history || [])]).sort(),
     active_history: uniq([...(a.active_history || []), ...(b.active_history || [])]).sort(),
+    // Keep whichever Knowledge Check is more recent — unlike counters these are
+    // a snapshot, so merging two of them would produce a result that never
+    // happened.
+    last_assessment: [a.last_assessment, b.last_assessment]
+      .filter(Boolean)
+      .sort((x, y) => String(x.date).localeCompare(String(y.date)))
+      .pop() || null,
+    assessment_history: dedupeByDate([
+      ...(a.assessment_history || []),
+      ...(b.assessment_history || []),
+    ]),
     last_daily_date: [a.last_daily_date, b.last_daily_date].filter(Boolean).sort().pop() || null,
     last_active_date: [a.last_active_date, b.last_active_date].filter(Boolean).sort().pop() || null,
     shield_used_week: [a.shield_used_week, b.shield_used_week].filter(Boolean).sort().pop() || undefined,

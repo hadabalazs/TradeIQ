@@ -40,6 +40,10 @@ const DEFAULT_PROGRESS = {
   active_history: [],
   last_daily_date: null,
   last_active_date: null,
+  // Most recent Knowledge Check result, and a trimmed history of scores so
+  // progress over time is visible without storing every question ever answered.
+  last_assessment: null,
+  assessment_history: [],
   srs_data: {},
   courses: {},
 };
@@ -200,6 +204,29 @@ export function ProgressProvider({ children }) {
     return { alreadyDone: false, ...(activityUpdate || {}) };
   }, [progress, save]);
 
+  // Store a scored Knowledge Check. The full result is kept so the improvement
+  // session knows which topics were weak; the history keeps only headline scores.
+  const recordAssessment = useCallback(
+    (result) => {
+      if (!progress || !result) return null;
+      const history = [...(progress.assessment_history || []), {
+        date: result.date,
+        pct: result.pct,
+        correct: result.correct,
+        total: result.total,
+      }].slice(-20);
+
+      const activityUpdate = computeActivityStreakUpdate(progress);
+      save({
+        ...(activityUpdate || {}),
+        last_assessment: result,
+        assessment_history: history,
+      });
+      return result;
+    },
+    [progress, save]
+  );
+
   const recordActivity = useCallback(() => {
     if (!progress) return null;
     const updates = computeActivityStreakUpdate(progress);
@@ -215,6 +242,7 @@ export function ProgressProvider({ children }) {
     saveCourseProgress,
     recordQuiz,
     recordDailyComplete,
+    recordAssessment,
     recordActivity,
     resetProgress,
     resetCourseProgress,

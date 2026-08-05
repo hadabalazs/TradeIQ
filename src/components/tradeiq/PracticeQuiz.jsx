@@ -83,7 +83,9 @@ export default function PracticeQuiz({
         advanceTimer.current = setTimeout(() => advance(null), WRONG_ADVANCE_MS);
       }
       if (onQuestionResult && question._topicId) {
-        onQuestionResult(question._topicId, isCorrect);
+        // The question is passed too: a cross-course session needs _courseId to
+        // tell apart topics that share an id shape between courses.
+        onQuestionResult(question._topicId, isCorrect, question);
       }
     },
     [answered, question, advance, onQuestionResult]
