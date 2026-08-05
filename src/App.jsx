@@ -19,6 +19,7 @@ import Daily from '@/pages/Daily';
 import ModuleQuiz from '@/pages/ModuleQuiz';
 import ModuleOverview from '@/pages/ModuleOverview';
 import Achievements from '@/pages/Achievements';
+import KnowledgeCheck from '@/pages/KnowledgeCheck';
 import Admin from '@/pages/Admin';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/course/:courseId/quiz/:moduleId" element={<ModuleQuiz />} />
                 <Route path="/daily" element={<Daily />} />
                 <Route path="/achievements" element={<Achievements />} />
+                <Route path="/knowledge-check" element={<KnowledgeCheck />} />
                 <Route path="/admin" element={<Admin />} />
               </Route>
 
