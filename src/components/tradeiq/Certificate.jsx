@@ -1,7 +1,8 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Download, Share2, Loader2, Check, Cloud } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { getCertificateForCourse } from "@/lib/certificates";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import Logo from "@/components/tradeiq/Logo";
@@ -46,7 +47,7 @@ function CornerFlourish({ className = "" }) {
 }
 
 export default function Certificate({ course, name, score, date, preview = false }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const certRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -61,18 +62,33 @@ export default function Certificate({ course, name, score, date, preview = false
     ? new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-  const certId = useMemo(() => {
-    const seed = `${name || "Learner"}${score}${formattedDate}`;
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-      hash |= 0;
-    }
-    return `TIQ-${Math.abs(hash).toString(36).toUpperCase().padStart(8, "0")}`;
-  }, [name, score, formattedDate]);
+  // SECURITY: the id used to be a 32-bit hash of name + score + date — derivable
+  // from a learner's details and prone to collisions. A real certificate id is
+  // now issued server-side and looked up here; nothing is invented locally.
+  //
+  // When there is no issued certificate — a guest, offline, or before the
+  // certificates migration is run — the certificate renders WITHOUT an id and
+  // without a verification QR, rather than printing an id that would fail
+  // verification. Showing an unverifiable id is worse than showing none.
+  const [issued, setIssued] = useState(null);
 
-  const verifyUrl = `${window.location.origin}/verify/${certId}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=72x72&margin=0&bgcolor=F5EDD8&color=1A2B1E&data=${encodeURIComponent(verifyUrl)}`;
+  useEffect(() => {
+    let alive = true;
+    if (!isAuthenticated || !user?.id || !course?.id || preview) {
+      setIssued(null);
+      return () => { alive = false; };
+    }
+    getCertificateForCourse(user.id, course.id)
+      .then((row) => alive && setIssued(row))
+      .catch(() => alive && setIssued(null));
+    return () => { alive = false; };
+  }, [isAuthenticated, user?.id, course?.id, preview]);
+
+  const certId = issued?.cert_id || null;
+  const verifyUrl = certId ? `${window.location.origin}/verify/${certId}` : null;
+  const qrUrl = verifyUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=72x72&margin=0&bgcolor=F5EDD8&color=1A2B1E&data=${encodeURIComponent(verifyUrl)}`
+    : null;
 
   const handleDownload = async () => {
     if (!certRef.current) return;
@@ -208,16 +224,25 @@ export default function Certificate({ course, name, score, date, preview = false
 
               {/* QR + Score + Date — aligned 3-column grid */}
               <div className="grid grid-cols-3 items-start max-w-lg mx-auto gap-4">
-                {/* QR code + verify URL */}
+                {/* QR code + verify URL — only for an issued certificate, since a
+                    QR pointing at an id that cannot be verified is worse than none. */}
                 <div className="text-center">
-                  <img
-                    src={qrUrl}
-                    crossOrigin="anonymous"
-                    alt="Verify"
-                    className="w-12 h-12 rounded-sm border border-[#B8963E]/20 mx-auto mb-1"
-                  />
-                  <p className="text-[8px] text-slate-500 uppercase tracking-wider">Scan to verify</p>
-                  <p className="text-[9px] text-tiq-mint font-mono-tiq">tradeiq.app/verify</p>
+                  {qrUrl ? (
+                    <>
+                      <img
+                        src={qrUrl}
+                        crossOrigin="anonymous"
+                        alt="Scan to verify this certificate"
+                        className="w-12 h-12 rounded-sm border border-[#B8963E]/20 mx-auto mb-1"
+                      />
+                      <p className="text-[8px] text-slate-500 uppercase tracking-wider">Scan to verify</p>
+                      <p className="text-[9px] text-tiq-mint font-mono-tiq">{window.location.host}/verify</p>
+                    </>
+                  ) : (
+                    <p className="text-[8px] text-slate-400 uppercase tracking-wider leading-relaxed">
+                      Preview — sign in to issue a verifiable certificate
+                    </p>
+                  )}
                 </div>
 
                 {/* Score */}
@@ -245,7 +270,7 @@ export default function Certificate({ course, name, score, date, preview = false
               {/* Certificate ID + accreditation */}
               <div className="mt-6 pt-4 border-t border-[#B8963E]/15">
                 <p className="text-[9px] text-slate-400 font-mono-tiq tracking-wider">
-                  Certificate ID: {certId}
+                  {certId ? `Certificate ID: ${certId}` : "Not yet issued — preview only"}
                 </p>
                 <p className="text-[8px] text-slate-400 mt-1 italic">
                   TradeIQ Academy &middot; This certificate does not expire

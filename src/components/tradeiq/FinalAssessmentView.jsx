@@ -3,12 +3,15 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, RotateCcw, Trophy, Sparkles, Lock, Eye } from "lucide-react";
 import { getCourse, FINAL_PASS_THRESHOLD, shuffleQuestionOptions } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
+import { useAuth } from "@/lib/AuthContext";
+import { issueCertificate } from "@/lib/certificates";
 import Certificate from "@/components/tradeiq/Certificate";
 
 export default function FinalAssessmentView() {
   const { courseId } = useParams();
   const course = getCourse(courseId);
   const { progress, save } = useProgress();
+  const { user } = useAuth();
   const [started, setStarted] = useState(false);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -58,6 +61,21 @@ export default function FinalAssessmentView() {
         },
         total_xp: (progress?.total_xp || 0) + correctCount * 10 + (passed && !courseProg.certified ? 100 : 0),
       });
+
+      // Record the certificate so it can actually be verified. Certificates are
+      // only issuable for a signed-in learner — there is no way to attest to a
+      // credential for an anonymous device, and printing an id that would fail
+      // verification is worse than printing none.
+      if (passed && user?.id) {
+        issueCertificate({
+          userId: user.id,
+          courseId: course.id,
+          courseTitle: course.certificateTitle || course.title,
+          learnerName: progress?.user_name || user.email?.split("@")[0] || "Learner",
+          score: pct,
+        }).catch(() => { /* offline or not yet migrated — cert stays unissued */ });
+      }
+
       setFinished(true);
     } else {
       setCurrent((c) => c + 1);
