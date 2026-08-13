@@ -68,3 +68,12 @@ export function clearQuizSession(key) {
   delete map[key];
   writeAll(map);
 }
+
+// Lightweight "is there something to resume?" for entry-point buttons. Returns
+// just the position, not the stored questions, so a page listing several
+// resumable sessions doesn't pull every question array into its render.
+export function getQuizSessionInfo(key) {
+  const s = loadQuizSession(key);
+  if (!s) return null;
+  return { current: s.current, total: s.questions.length, savedAt: s.savedAt };
+}
