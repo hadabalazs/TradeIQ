@@ -156,7 +156,10 @@ export function generateFinalAssessment(courseData) {
   for (const mod of modules) {
     const modQuestions = (mod.topics || [])
       .flatMap(t => (t.quiz || []).map(q => ({ ...q, _topicId: t.id })))
-      .filter(q => !q.questionType || q.questionType === 'multiple-choice');
+      // Flashcards are excluded because they are self-graded — the learner taps
+      // "I Remembered This", which cannot decide a certification. Every other
+      // type is checked against a definitive answer and belongs in the exam.
+      .filter(q => q.questionType !== 'flashcard');
     questions.push(...modQuestions.slice(0, perModule));
   }
 

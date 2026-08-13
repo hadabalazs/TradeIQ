@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, RotateCcw, Trophy, Sparkles, Lock, Eye } from "lucide-react";
-import { getCourse, FINAL_PASS_THRESHOLD, shuffleQuestionOptions } from "@/lib/courses";
+import { getCourse, FINAL_PASS_THRESHOLD, shuffleQuestionOptions, diversifyQuizArray } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
 import { useAuth } from "@/lib/AuthContext";
 import { issueCertificate } from "@/lib/certificates";
 import Certificate from "@/components/tradeiq/Certificate";
+import FlagQuestion from "@/components/tradeiq/FlagQuestion";
+import { FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
+import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 
 export default function FinalAssessmentView() {
   const { courseId } = useParams();
@@ -19,7 +22,15 @@ export default function FinalAssessmentView() {
   const [correctCount, setCorrectCount] = useState(0);
   const [finished, setFinished] = useState(false);
   const [score, setScore] = useState(0);
-  const [shuffledAssessment, setShuffledAssessment] = useState(() => course ? course.finalAssessment.map(shuffleQuestionOptions) : []);
+  // The final exam used to be multiple-choice only, which made it the least
+  // varied assessment in the app. It now runs through the same diversification
+  // as module quizzes — but with allowSelfGraded:false, so no flashcards: those
+  // are marked by the learner tapping "I Remembered This", which cannot decide a
+  // certification. Fill-in-the-blank, sorting and term-match are all checked
+  // against a definitive answer, so they are fair game.
+  const [shuffledAssessment, setShuffledAssessment] = useState(() =>
+    course ? diversifyQuizArray(course.finalAssessment.map(shuffleQuestionOptions), { allowSelfGraded: false }) : []
+  );
   const [previewMode, setPreviewMode] = useState(false);
   const [certName, setCertName] = useState(progress?.user_name || "");
 
@@ -37,6 +48,15 @@ export default function FinalAssessmentView() {
   const allCompleted = (courseProg.completed_topics || []).length >= totalTopics || courseProg.unlock_all;
   const question = shuffledAssessment[current];
   const isLast = current === shuffledAssessment.length - 1;
+
+  const questionType = question?.questionType || "multiple-choice";
+
+  // Non-MCQ types report their own correctness against a definitive answer.
+  const chooseTyped = (isCorrect) => {
+    if (answered) return;
+    setAnswered(true);
+    if (isCorrect) setCorrectCount((c) => c + 1);
+  };
 
   const choose = (idx) => {
     if (answered) return;
@@ -85,7 +105,7 @@ export default function FinalAssessmentView() {
   };
 
   const retake = () => {
-    setShuffledAssessment(course.finalAssessment.map(shuffleQuestionOptions));
+    setShuffledAssessment(diversifyQuizArray(course.finalAssessment.map(shuffleQuestionOptions), { allowSelfGraded: false }));
     setStarted(false);
     setCurrent(0);
     setSelected(null);
@@ -236,8 +256,28 @@ export default function FinalAssessmentView() {
         <div className="flex-1 h-1 bg-tiq-mintLight rounded-full mx-3 overflow-hidden">
           <div className="h-full bg-tiq-mint transition-all" style={{ width: `${(current / shuffledAssessment.length) * 100}%` }} />
         </div>
+        <FlagQuestion
+          question={question}
+          courseId={course?.id}
+          topicId={question._topicId}
+          className="shrink-0"
+        />
       </div>
 
+      {questionType !== "multiple-choice" ? (
+        <div className="mb-5">
+          {questionType === "fill-in-the-blank" && (
+            <FillInBlankQuestion key={`fb-${current}`} question={question} answered={answered} onAnswered={chooseTyped} showExplanation />
+          )}
+          {questionType === "sorting" && (
+            <SortingQuestion key={`so-${current}`} question={question} answered={answered} onAnswered={chooseTyped} showExplanation />
+          )}
+          {questionType === "term-match" && (
+            <TermMatchQuestion key={`tm-${current}`} question={question} answered={answered} onAnswered={chooseTyped} showExplanation />
+          )}
+        </div>
+      ) : (
+      <>
       <h2 className="font-slab text-xl text-tiq-ink font-bold mb-5">{question.q}</h2>
 
       <div className="space-y-2.5 mb-5">
@@ -277,6 +317,8 @@ export default function FinalAssessmentView() {
             {question.explain}
           </p>
         </div>
+      )}
+      </>
       )}
 
       {answered && (

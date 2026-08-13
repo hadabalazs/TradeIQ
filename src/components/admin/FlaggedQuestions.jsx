@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Flag, Download, Upload, EyeOff, Eye, Check, RefreshCw, AlertCircle } from "lucide-react";
+import { Flag, Download, Upload, EyeOff, Eye, Check, RefreshCw, AlertCircle, Pencil, X, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { useCourses } from "@/lib/CoursesContext";
@@ -45,6 +45,133 @@ function locate(courseId, qid) {
   return { course, module: null, moduleIndex: -1, topic: null, question: null };
 }
 
+
+// Inline editor for a flagged question. The file round trip is still there for
+// bulk work, but fixing one bad option shouldn't require exporting, editing JSON
+// and re-uploading. Saving writes a `replace` override, so the correction lands
+// for every learner immediately and the original question is never mutated —
+// reverting restores exactly what shipped.
+function QuestionEditor({ initial, onCancel, onSave, saving }) {
+  const [draft, setDraft] = useState(() => ({
+    q: initial?.q || "",
+    options: Array.isArray(initial?.options) ? [...initial.options] : null,
+    answer: typeof initial?.answer === "number" ? initial.answer : 0,
+    answerText: initial?.answerText || "",
+    explain: initial?.explain || "",
+    questionType: initial?.questionType || "multiple-choice",
+  }));
+
+  const isMcq = draft.questionType === "multiple-choice" && Array.isArray(draft.options);
+  const needsAnswerText = ["flashcard", "fill-in-the-blank"].includes(draft.questionType);
+
+  const problems = [];
+  if (!draft.q.trim()) problems.push("Question text is required");
+  if (isMcq) {
+    if (draft.options.length !== 4) problems.push("Multiple choice needs exactly 4 options");
+    if (draft.options.some((o) => !String(o).trim())) problems.push("Options can't be blank");
+    if (!draft.explain.trim()) problems.push("Explanation is required");
+  }
+  if (needsAnswerText && !draft.answerText.trim()) problems.push("Answer text is required");
+
+  const setOption = (i, v) =>
+    setDraft((d) => ({ ...d, options: d.options.map((o, idx) => (idx === i ? v : o)) }));
+
+  const commit = () => {
+    const out = { ...initial, q: draft.q.trim(), explain: draft.explain.trim() };
+    if (isMcq) { out.options = draft.options.map((o) => String(o).trim()); out.answer = draft.answer; }
+    if (needsAnswerText) out.answerText = draft.answerText.trim();
+    onSave(out);
+  };
+
+  return (
+    <div className="rounded-lg border border-tiq-mint/40 bg-tiq-mintLight/30 p-3.5 mb-3 space-y-3">
+      <div>
+        <label className="block text-[11px] font-medium text-tiq-ink mb-1">Question</label>
+        <textarea
+          value={draft.q}
+          onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
+          rows={2}
+          className="w-full px-2.5 py-2 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint resize-none"
+        />
+      </div>
+
+      {isMcq && (
+        <div>
+          <label className="block text-[11px] font-medium text-tiq-ink mb-1">
+            Options — select the correct one
+          </label>
+          <div className="space-y-1.5">
+            {draft.options.map((opt, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="correct-answer"
+                  checked={draft.answer === i}
+                  onChange={() => setDraft((d) => ({ ...d, answer: i }))}
+                  className="accent-tiq-mint shrink-0"
+                  aria-label={`Mark option ${String.fromCharCode(65 + i)} correct`}
+                />
+                <span className="text-[11px] font-mono-tiq text-slate-400 w-4 shrink-0">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <input
+                  value={opt}
+                  onChange={(e) => setOption(i, e.target.value)}
+                  className={`flex-1 px-2.5 py-1.5 text-sm rounded-lg border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint ${
+                    draft.answer === i ? "border-emerald-500/50" : "border-tiq-border"
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {needsAnswerText && (
+        <div>
+          <label className="block text-[11px] font-medium text-tiq-ink mb-1">Answer</label>
+          <input
+            value={draft.answerText}
+            onChange={(e) => setDraft((d) => ({ ...d, answerText: e.target.value }))}
+            className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint"
+          />
+        </div>
+      )}
+
+      <div>
+        <label className="block text-[11px] font-medium text-tiq-ink mb-1">Explanation</label>
+        <textarea
+          value={draft.explain}
+          onChange={(e) => setDraft((d) => ({ ...d, explain: e.target.value }))}
+          rows={2}
+          className="w-full px-2.5 py-2 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint resize-none"
+        />
+      </div>
+
+      {problems.length > 0 && (
+        <p className="text-[11px] text-amber-600">{problems.join(" · ")}</p>
+      )}
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={commit}
+          disabled={saving || problems.length > 0}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tiq-mint text-white font-medium hover:bg-tiq-mint/90 transition text-xs disabled:opacity-50"
+        >
+          <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save & reinstate"}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={saving}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-xs"
+        >
+          <X className="w-3.5 h-3.5" /> Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function FlaggedQuestions() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -57,6 +184,7 @@ export default function FlaggedQuestions() {
   const [loading, setLoading] = useState(true);
   const [installed, setInstalled] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -130,6 +258,28 @@ export default function FlaggedQuestions() {
       },
       "Question reinstated"
     );
+
+  // Editing writes a `replace` override — the shipped question is never mutated,
+  // so "Reinstate original" still restores exactly what came with the course.
+  const saveEdit = (entry, replacement) => {
+    const found = locate(entry.courseId, entry.questionId);
+    return act(
+      entry,
+      async () => {
+        await replaceQuestion({
+          courseId: entry.courseId,
+          questionId: entry.questionId,
+          replacement,
+          moduleId: found?.module?.id,
+          topicId: found?.topic?.id,
+          userId: user?.id,
+        });
+        await setStatusForQuestion(entry.courseId, entry.questionId, "resolved");
+        setEditing(null);
+      },
+      "Question updated and back in circulation"
+    );
+  };
 
   const dismiss = (entry) =>
     act(entry, () => setStatusForQuestion(entry.courseId, entry.questionId, "dismissed"), "Flag dismissed");
@@ -426,7 +576,25 @@ export default function FlaggedQuestions() {
                   ))}
                 </div>
 
+                {editing === entry.key && (
+                  <QuestionEditor
+                    initial={ovr?.action === "replace" ? ovr.replacement : snapshot}
+                    saving={working}
+                    onCancel={() => setEditing(null)}
+                    onSave={(replacement) => saveEdit(entry, replacement)}
+                  />
+                )}
+
                 <div className="flex items-center gap-2 flex-wrap">
+                  {editing !== entry.key && (
+                    <button
+                      onClick={() => setEditing(entry.key)}
+                      disabled={working || !snapshot}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tiq-mint text-white font-medium hover:bg-tiq-mint/90 transition text-xs disabled:opacity-50"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit question
+                    </button>
+                  )}
                   {isSuppressed || isReplaced ? (
                     <button
                       onClick={() => reinstate(entry)}

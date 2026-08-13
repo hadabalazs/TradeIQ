@@ -233,7 +233,12 @@ export function diversifyQuestionTypes(question) {
 // non-MCQ type (flashcard → fill-in-the-blank → sorting) at every odd position.
 // Pre-typed sorting questions fill the sorting slot; MCQs are converted for
 // flashcard and fill-in-the-blank slots. Falls back gracefully when pools run out.
-export function diversifyQuizArray(questions) {
+// `allowSelfGraded: false` excludes flashcards. A flashcard is marked by the
+// learner tapping "I Remembered This", which is fine for practice but cannot be
+// used in a graded certification exam — it would let anyone mark themselves
+// correct. Fill-in-the-blank, sorting and term-match are all checked against a
+// definitive answer, so they stay.
+export function diversifyQuizArray(questions, { allowSelfGraded = true } = {}) {
   if (!questions || questions.length === 0) return [];
 
   // Partition: plain MCQ vs pre-typed sorting/term-match
@@ -262,7 +267,9 @@ export function diversifyQuizArray(questions) {
     return !q.questionType || q.questionType === "multiple-choice";
   }
 
-  const nonMcqTypes = ["flashcard", "fill-in-the-blank", "sorting", "term-match"];
+  const nonMcqTypes = allowSelfGraded
+    ? ["flashcard", "fill-in-the-blank", "sorting", "term-match"]
+    : ["fill-in-the-blank", "sorting", "term-match"];
   let cycleIdx = 0;
 
   function takePlainMcq() {
