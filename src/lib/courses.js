@@ -349,6 +349,39 @@ export function getQuizQuestions(course, difficulty, count) {
 // the dilemma count so the learner always sees exactly MODULE_QUIZ_LENGTH.
 export const MODULE_QUIZ_LENGTH = 20;
 
+
+// Build the final exam question pool.
+//
+// The authored FINAL_ASSESSMENT arrays are entirely multiple-choice, so on their
+// own the exam could never contain a sorting or term-match question no matter
+// how it was rendered. The pre-typed types live in the module topic pools, so
+// the pool is widened to include them.
+//
+// Flashcards are the one exclusion: they are graded by the learner tapping "I
+// Remembered This", which cannot decide a certification. Every other type is
+// checked against a definitive answer.
+//
+// Exam LENGTH is unchanged — typed questions take slots rather than being added
+// on top, so the exam doesn't silently get longer. They are capped at roughly a
+// third so the exam stays anchored in its authored content.
+export function buildFinalExamPool(course) {
+  const authored = (course?.finalAssessment || []).filter((q) => q.questionType !== "flashcard");
+  if (authored.length === 0) return [];
+
+  const typed = (course?.modules || [])
+    .flatMap((m) => (m.topics || []).map((t) => ({ t, m })))
+    .flatMap(({ t }) => (t.quiz || []).map((q) => ({ ...q, _topicId: t.id })))
+    .filter((q) => q.questionType && q.questionType !== "flashcard" && q.questionType !== "multiple-choice");
+
+  const total = authored.length;
+  const typedSlots = Math.min(typed.length, Math.floor(total / 3));
+  const picked = [
+    ...shuffle(typed).slice(0, typedSlots),
+    ...shuffle(authored).slice(0, total - typedSlots),
+  ];
+  return shuffle(picked);
+}
+
 export function getModuleQuiz(course, moduleIndex, limit = MODULE_QUIZ_LENGTH) {
   const module = course.modules[moduleIndex];
   if (!module) return [];

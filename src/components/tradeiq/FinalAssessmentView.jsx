@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, RotateCcw, Trophy, Sparkles, Lock, Eye } from "lucide-react";
-import { getCourse, FINAL_PASS_THRESHOLD, shuffleQuestionOptions, diversifyQuizArray } from "@/lib/courses";
+import { getCourse, FINAL_PASS_THRESHOLD, shuffleQuestionOptions, diversifyQuizArray, buildFinalExamPool } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
 import { useAuth } from "@/lib/AuthContext";
 import { issueCertificate } from "@/lib/certificates";
@@ -29,7 +29,7 @@ export default function FinalAssessmentView() {
   // certification. Fill-in-the-blank, sorting and term-match are all checked
   // against a definitive answer, so they are fair game.
   const [shuffledAssessment, setShuffledAssessment] = useState(() =>
-    course ? diversifyQuizArray(course.finalAssessment.map(shuffleQuestionOptions), { allowSelfGraded: false }) : []
+    course ? diversifyQuizArray(buildFinalExamPool(course).map(shuffleQuestionOptions), { allowSelfGraded: false }) : []
   );
   const [previewMode, setPreviewMode] = useState(false);
   const [certName, setCertName] = useState(progress?.user_name || "");
@@ -105,7 +105,7 @@ export default function FinalAssessmentView() {
   };
 
   const retake = () => {
-    setShuffledAssessment(diversifyQuizArray(course.finalAssessment.map(shuffleQuestionOptions), { allowSelfGraded: false }));
+    setShuffledAssessment(diversifyQuizArray(buildFinalExamPool(course).map(shuffleQuestionOptions), { allowSelfGraded: false }));
     setStarted(false);
     setCurrent(0);
     setSelected(null);

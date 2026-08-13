@@ -67,6 +67,15 @@ export default function KnowledgeCheck() {
     setMode("improve");
   };
 
+  // Mirrored into state purely so it can be persisted with the session; the ref
+  // stays the source of truth during a run.
+  const [talliesSnapshot, setTalliesSnapshot] = useState({});
+
+  const restoreTallies = useCallback((meta) => {
+    tallies.current = meta && typeof meta === "object" ? { ...meta } : {};
+    setTalliesSnapshot(tallies.current);
+  }, []);
+
   const onQuestionResult = useCallback((topicId, isCorrect, question) => {
     const courseId = question?._courseId || "";
     const key = `${courseId}::${topicId}`;
@@ -74,6 +83,7 @@ export default function KnowledgeCheck() {
     t.total += 1;
     if (isCorrect) t.correct += 1;
     tallies.current[key] = t;
+    setTalliesSnapshot({ ...tallies.current });
   }, []);
 
   const finishAssessment = async () => {
@@ -98,6 +108,9 @@ export default function KnowledgeCheck() {
         title={mode === "assess" ? "Knowledge Check" : "Boost Weak Topics"}
         exitLabel="Back to Knowledge Check"
         overlay
+        sessionKey={mode === "assess" ? "knowledge-assess" : "knowledge-boost"}
+        sessionMeta={talliesSnapshot}
+        onSessionRestored={restoreTallies}
       />
     );
   }

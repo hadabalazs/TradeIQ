@@ -160,6 +160,7 @@ export default function DailyLesson() {
                 onExit={exitCourseRecap}
                 title={`${courseSession.title} — Recap`}
                 exitLabel="Back to Recap"
+                sessionKey={`course-recap::${courseSession.courseId}`}
                 overlay
               />
             ) : (
@@ -169,6 +170,7 @@ export default function DailyLesson() {
                 onExit={() => setQuizStarted(false)}
                 title="Daily Recap"
                 exitLabel="Back to Recap"
+                sessionKey="daily-recap"
                 overlay
               />
             )
