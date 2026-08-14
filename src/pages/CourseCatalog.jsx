@@ -5,8 +5,9 @@ import { getNextStep } from "@/lib/courses";
 import { useCourses } from "@/lib/CoursesContext";
 import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
 import Logo from "@/components/tradeiq/Logo";
+import GuestIntro from "@/components/tradeiq/GuestIntro";
 import { useAuth } from "@/lib/AuthContext";
-import { Cloud, Download, Loader2, WifiOff, Compass } from "lucide-react";
+import { Download, Loader2, WifiOff, Compass } from "lucide-react";
 import TodaysDilemma from "@/components/tradeiq/TodaysDilemma";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -134,70 +135,52 @@ export default function CourseCatalog() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Hero */}
-      <div className="mb-10 text-center">
-        <div className="flex justify-center mb-4">
-          <Logo size={56} />
-        </div>
-        <h1 className="font-slab text-3xl sm:text-4xl text-tiq-ink font-bold mb-2">
-          TradeIQ Academy
-        </h1>
-        <p className="text-slate-600 max-w-2xl mx-auto">
-          Master professional skills with expert-led courses. Learn at your own pace,
-          track your progress, and earn certificates.
-        </p>
-      </div>
-
-      {/* Guest sign-up CTA */}
-      {!isAuthenticated && (
-        <div className="mb-10 max-w-3xl mx-auto rounded-xl bg-gradient-to-r from-tiq-mint/10 to-tiq-gold/5 border border-tiq-mint/30 p-5 flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-lg bg-tiq-mint/15 border border-tiq-mint/30 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5 text-tiq-mint" />
+      {/* A first-time visitor needs to know what this is before anything else.
+          A signed-in learner needs their own numbers — "0 XP · Level 1 · 0 day
+          streak" tells a guest nothing and explains nothing. */}
+      {!isAuthenticated ? (
+        <GuestIntro courseCount={courses.length} />
+      ) : (
+        <>
+          {/* Hero */}
+          <div className="mb-10 text-center">
+            <div className="flex justify-center mb-4">
+              <Logo size={56} />
             </div>
-            <p className="text-sm text-slate-600 text-left">
-              <span className="font-semibold text-tiq-ink">Create a free account</span> to keep your
-              progress synced across devices and earn certificates when you complete a course.
+            <h1 className="font-slab text-3xl sm:text-4xl text-tiq-ink font-bold mb-2">
+              TradeIQ Academy
+            </h1>
+            <p className="text-slate-600 max-w-2xl mx-auto">
+              Master professional skills with expert-led courses. Learn at your own pace,
+              track your progress, and earn certificates.
             </p>
           </div>
-          <Link
-            to="/login"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tiq-mint text-white text-sm font-semibold hover:bg-tiq-mint/90 transition shrink-0"
-          >
-            <Cloud className="w-4 h-4" /> Sign Up · Free
-          </Link>
-          <Link
-            to="/login"
-            className="text-sm text-tiq-mint font-medium hover:underline shrink-0"
-          >
-            Sign in
-          </Link>
-        </div>
-      )}
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-        <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
-          <BookOpen className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
-          <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{courses.length}</p>
-          <p className="text-xs text-slate-500">Courses</p>
-        </div>
-        <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
-          <Sparkles className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
-          <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{totalXP}</p>
-          <p className="text-xs text-slate-500">Total XP</p>
-        </div>
-        <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
-          <Award className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
-          <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">Lv {level}</p>
-          <p className="text-xs text-slate-500">Level</p>
-        </div>
-        <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
-          <Flame className="w-4 h-4 text-orange-500 mx-auto mb-2" />
-          <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{streak}</p>
-          <p className="text-xs text-slate-500">Day Streak</p>
-        </div>
-      </div>
+          {/* Quick stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+            <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
+              <BookOpen className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
+              <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{courses.length}</p>
+              <p className="text-xs text-slate-500">Courses</p>
+            </div>
+            <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
+              <Sparkles className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
+              <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{totalXP}</p>
+              <p className="text-xs text-slate-500">Total XP</p>
+            </div>
+            <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
+              <Award className="w-4 h-4 text-tiq-mint mx-auto mb-2" />
+              <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">Lv {level}</p>
+              <p className="text-xs text-slate-500">Level</p>
+            </div>
+            <div className="rounded-xl bg-white border border-tiq-border p-4 text-center">
+              <Flame className="w-4 h-4 text-orange-500 mx-auto mb-2" />
+              <p className="text-2xl font-mono-tiq text-tiq-ink font-bold">{streak}</p>
+              <p className="text-xs text-slate-500">Day Streak</p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Today's Dilemma */}
       <TodaysDilemma />
@@ -222,6 +205,8 @@ export default function CourseCatalog() {
       {/* My Courses — enrolled, or already under way. Kept separate so the
           courses you are actually working through are not buried among the ones
           you have never opened. */}
+      <div id="courses" />
+
       {myCourses.length > 0 && (
         <>
           <div className="mb-4 flex items-center gap-2">
