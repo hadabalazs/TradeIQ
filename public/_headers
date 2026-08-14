@@ -3,3 +3,25 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com; connect-src 'self' https://wpxfqwmdvszugcykvkoe.supabase.co wss://wpxfqwmdvszugcykvkoe.supabase.co; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# Content-Security-Policy notes — read before editing the line above.
+#
+# Every origin listed is one the app genuinely uses:
+#   fonts.googleapis.com / fonts.gstatic.com  the @import in src/index.css
+#   api.qrserver.com                          the certificate verification QR
+#   *.supabase.co (https + wss)               auth, sync, courses, realtime
+#
+# script-src is 'self' with no CDN. That is deliberate: jsPDF can lazily fetch
+# pdfobject.min.js from cdnjs, but only on its "dataurlnewwindow" output path,
+# which this app never uses — it calls pdf.save(). Blocking it removes a remote
+# script-execution surface we get no benefit from.
+#
+# style-src needs 'unsafe-inline' because the app uses React inline style props
+# throughout (progress bars, certificate theming). Removing it would require
+# nonces threaded through every inline style and is not worth it here; inline
+# STYLE is a far weaker vector than inline script, which stays blocked.
+#
+# frame-ancestors 'none' duplicates X-Frame-Options for browsers that honour CSP
+# in preference to it.

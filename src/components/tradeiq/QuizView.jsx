@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, Sparkles, Theater } from "lucide-react";
 import { PASS_THRESHOLD, shuffleQuestionOptions, diversifyQuizArray } from "@/lib/courses";
 import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
@@ -6,6 +6,7 @@ import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 import InlineDilemma from "@/components/tradeiq/InlineDilemma";
 import RecallPopup from "@/components/tradeiq/RecallPopup";
 import FlagQuestion from "@/components/tradeiq/FlagQuestion";
+import { loadQuizSession, saveQuizSession, clearQuizSession } from "@/lib/quizSession";
 import { recordReview, Grades } from "@/lib/srs";
 
 function interleaveDilemmas(questions, dilemmas) {
@@ -20,14 +21,52 @@ function interleaveDilemmas(questions, dilemmas) {
 }
 
 export default function QuizView({ topic, onComplete, onBackToLesson, onContinue, continueLabel, dilemmas, course, module }) {
-  const [current, setCurrent] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [answered, setAnswered] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
+  // Identifies this specific quiz so an interrupted attempt can be picked up
+  // again. Module quizzes arrive as a virtual topic whose id is `module_<id>`,
+  // so this covers both module and topic quizzes without special-casing.
+  const sessionKey = topic?.id ? `${course?.id || "nocourse"}::${topic.id}` : null;
+  const restored = useMemo(() => loadQuizSession(sessionKey), [sessionKey]);
+
+  const [current, setCurrent] = useState(restored?.current ?? 0);
+  const [selected, setSelected] = useState(restored?.selected ?? null);
+  const [answered, setAnswered] = useState(restored?.answered ?? false);
+  const [correctCount, setCorrectCount] = useState(restored?.correctCount ?? 0);
   const [finished, setFinished] = useState(false);
   const [result, setResult] = useState(null);
-  const [wasCorrect, setWasCorrect] = useState(false);
-  const [shuffledQuiz, setShuffledQuiz] = useState(() => interleaveDilemmas(diversifyQuizArray(topic.quiz.map(shuffleQuestionOptions)), dilemmas));
+  const [wasCorrect, setWasCorrect] = useState(restored?.wasCorrect ?? false);
+  // Resume the exact question set that was started. Rebuilding it would produce
+  // a different random sample, making any saved position meaningless.
+  const [shuffledQuiz, setShuffledQuiz] = useState(
+    () => restored?.questions ?? interleaveDilemmas(diversifyQuizArray(topic.quiz.map(shuffleQuestionOptions)), dilemmas)
+  );
+  const [resumed, setResumed] = useState(!!restored);
+
+  // Persist after every answer and advance, so closing the tab mid-question
+  // loses at most the current question.
+  useEffect(() => {
+    if (!sessionKey || finished) return;
+    saveQuizSession(sessionKey, {
+      questions: shuffledQuiz,
+      current,
+      correctCount,
+      selected,
+      answered,
+      wasCorrect,
+    });
+  }, [sessionKey, finished, shuffledQuiz, current, correctCount, selected, answered, wasCorrect]);
+
+  const startOver = () => {
+    clearQuizSession(sessionKey);
+    setShuffledQuiz(interleaveDilemmas(diversifyQuizArray(topic.quiz.map(shuffleQuestionOptions)), dilemmas));
+    setCurrent(0);
+    setSelected(null);
+    setAnswered(false);
+    setCorrectCount(0);
+    setWasCorrect(false);
+    setFinished(false);
+    setResult(null);
+    setResumed(false);
+  };
 
   const question = shuffledQuiz[current];
   const isLast = current === shuffledQuiz.length - 1;
@@ -62,6 +101,7 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
     if (isLast) {
       const score = Math.round((correctCount / scoredLength) * 100);
       const res = await onComplete(correctCount, scoredLength);
+      clearQuizSession(sessionKey);
       setResult({ score, ...res });
       setFinished(true);
     } else {
@@ -72,13 +112,16 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
   };
 
   const retake = () => {
+    clearQuizSession(sessionKey);
     setShuffledQuiz(interleaveDilemmas(diversifyQuizArray(topic.quiz.map(shuffleQuestionOptions)), dilemmas));
     setCurrent(0);
     setSelected(null);
     setAnswered(false);
     setCorrectCount(0);
+    setWasCorrect(false);
     setFinished(false);
     setResult(null);
+    setResumed(false);
   };
 
   if (finished) {
@@ -133,6 +176,19 @@ export default function QuizView({ topic, onComplete, onBackToLesson, onContinue
 
   return (
     <div className="max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto">
+      {resumed && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-3 py-2 rounded-lg bg-tiq-mintLight border border-tiq-border flex-wrap">
+          <p className="text-xs text-slate-600">
+            Picked up where you left off — question {current + 1} of {shuffledQuiz.length}.
+          </p>
+          <button
+            onClick={startOver}
+            className="text-xs font-medium text-tiq-mint hover:text-tiq-ink transition shrink-0"
+          >
+            Start over
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-mono-tiq text-slate-500">
           Question {current + 1} of {shuffledQuiz.length}

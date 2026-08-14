@@ -6,6 +6,7 @@ import { useCourses } from "@/lib/CoursesContext";
 import { buildDailyQueue, buildCourseQueue, courseQueueStats, dueCount } from "@/lib/srs";
 import PracticeQuiz from "@/components/tradeiq/PracticeQuiz";
 import StreakCalendar from "@/components/tradeiq/StreakCalendar";
+import { getQuizSessionInfo, clearQuizSession } from "@/lib/quizSession";
 
 function isoWeekStr(d = new Date()) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -50,6 +51,34 @@ export default function DailyLesson() {
   );
 
   const hasQuestions = recapQuestions.length > 0;
+
+  // Entry-point labels have to reflect what the button will actually do. A
+  // pending session means pressing it resumes rather than starts, so it says so
+  // — and offers an explicit way to abandon the old attempt instead.
+  const [sessionTick, setSessionTick] = useState(0);
+  const dailyPending = useMemo(
+    () => getQuizSessionInfo("daily-recap"),
+    // Recheck after a session ends or is discarded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sessionTick, quizStarted]
+  );
+  const coursePending = useMemo(
+    () => new Map((courses || []).map((c) => [c.id, getQuizSessionInfo(`course-recap::${c.id}`)])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [courses, sessionTick, quizStarted]
+  );
+
+  const startFreshDaily = () => {
+    clearQuizSession("daily-recap");
+    setSessionTick((t) => t + 1);
+    setQuizStarted(true);
+  };
+
+  const startFreshCourseRecap = (course) => {
+    clearQuizSession(`course-recap::${course.id}`);
+    setSessionTick((t) => t + 1);
+    startCourseRecap(course);
+  };
 
   const startCourseRecap = (course) => {
     setCourseSession({
@@ -126,13 +155,25 @@ export default function DailyLesson() {
               </p>
 
               {hasQuestions ? (
-                <button
-                  onClick={() => setQuizStarted(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition"
-                >
-                  Start Daily Recap ({recapQuestions.length} questions{due > 0 ? ` · ${due} due` : ""})
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={() => setQuizStarted(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition"
+                  >
+                    {dailyPending
+                      ? `Resume Daily Recap (question ${dailyPending.current + 1} of ${dailyPending.total})`
+                      : `Start Daily Recap (${recapQuestions.length} questions${due > 0 ? ` · ${due} due` : ""})`}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  {dailyPending && (
+                    <button
+                      onClick={startFreshDaily}
+                      className="px-4 py-2.5 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-sm font-medium"
+                    >
+                      Start new
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="p-6 rounded-xl bg-tiq-mintLight border border-tiq-border text-center">
                   <BookOpen className="w-10 h-10 text-tiq-mint mx-auto mb-3" />
@@ -160,6 +201,7 @@ export default function DailyLesson() {
                 onExit={exitCourseRecap}
                 title={`${courseSession.title} — Recap`}
                 exitLabel="Back to Recap"
+                sessionKey={`course-recap::${courseSession.courseId}`}
                 overlay
               />
             ) : (
@@ -169,6 +211,7 @@ export default function DailyLesson() {
                 onExit={() => setQuizStarted(false)}
                 title="Daily Recap"
                 exitLabel="Back to Recap"
+                sessionKey="daily-recap"
                 overlay
               />
             )
@@ -186,26 +229,45 @@ export default function DailyLesson() {
                 Daily Recap above does that.
               </p>
               <ul className="space-y-2">
-                {courseRecaps.map(({ course, stats }) => (
-                  <li key={course.id}>
-                    <button
-                      onClick={() => startCourseRecap(course)}
-                      className="w-full flex items-center gap-3 rounded-lg border border-tiq-border bg-white p-3.5 hover:border-tiq-mint/40 transition text-left"
-                    >
-                      <BookOpen className="w-4 h-4 text-tiq-mint shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-tiq-ink truncate">{course.title}</p>
-                        <p className="text-xs text-slate-500">
-                          {stats.total} question{stats.total === 1 ? "" : "s"} learned
-                          {stats.due > 0 && (
-                            <span className="text-tiq-mint font-medium"> · {stats.due} due</span>
-                          )}
-                        </p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
-                    </button>
-                  </li>
-                ))}
+                {courseRecaps.map(({ course, stats }) => {
+                  const pending = coursePending.get(course.id);
+                  return (
+                    <li key={course.id} className="flex items-center gap-2">
+                      <button
+                        onClick={() => startCourseRecap(course)}
+                        className="flex-1 min-w-0 flex items-center gap-3 rounded-lg border border-tiq-border bg-white p-3.5 hover:border-tiq-mint/40 transition text-left"
+                      >
+                        <BookOpen className="w-4 h-4 text-tiq-mint shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-tiq-ink truncate">{course.title}</p>
+                          <p className="text-xs text-slate-500">
+                            {pending ? (
+                              <span className="text-tiq-mint font-medium">
+                                Resume · question {pending.current + 1} of {pending.total}
+                              </span>
+                            ) : (
+                              <>
+                                {stats.total} question{stats.total === 1 ? "" : "s"} learned
+                                {stats.due > 0 && (
+                                  <span className="text-tiq-mint font-medium"> · {stats.due} due</span>
+                                )}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+                      </button>
+                      {pending && (
+                        <button
+                          onClick={() => startFreshCourseRecap(course)}
+                          className="px-3 py-2 rounded-lg border border-tiq-border text-xs text-slate-600 hover:bg-tiq-mintLight transition shrink-0"
+                        >
+                          Start new
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

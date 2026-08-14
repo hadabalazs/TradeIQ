@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getCourse, isModuleUnlocked, moduleProgress, PASS_THRESHOLD, MODULE_QUIZ_LENGTH } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
+import { getQuizSessionInfo } from "@/lib/quizSession";
 
 // Overview of a single module: what it covers, what you'll be able to do, and
 // the lessons inside it with your progress — so you can size up a module before
@@ -44,6 +45,7 @@ export default function ModuleOverview() {
   const quizScore = scores[`module_${module.id}`]?.percent;
   const quizPassed = quizScore != null && quizScore >= PASS_THRESHOLD;
   const nextModule = course.modules[moduleIndex + 1];
+  const quizPending = getQuizSessionInfo(`${courseId}::module_${module.id}`);
   const firstUnfinished = module.topics.find((t) => !completed.includes(t.id)) || module.topics[0];
 
   return (
@@ -197,7 +199,9 @@ export default function ModuleOverview() {
             to={`/course/${courseId}/quiz/${module.id}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition text-sm"
           >
-            {quizScore != null ? "Retake quiz" : "Take the quiz"}
+            {quizPending
+              ? `Resume quiz (question ${quizPending.current + 1} of ${quizPending.total})`
+              : quizScore != null ? "Retake quiz" : "Take the quiz"}
             <ArrowRight className="w-4 h-4" />
           </Link>
           {!unlocked && (

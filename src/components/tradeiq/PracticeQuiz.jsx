@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -13,6 +13,7 @@ import { FlashcardQuestion, FillInBlankQuestion, SortingQuestion } from "@/compo
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
 import RecallPopup from "@/components/tradeiq/RecallPopup";
 import FlagQuestion from "@/components/tradeiq/FlagQuestion";
+import { loadQuizSession, saveQuizSession, clearQuizSession } from "@/lib/quizSession";
 import { recordReview, Grades } from "@/lib/srs";
 
 // Delay before auto-advancing after a wrong answer, so the learner sees the
@@ -27,22 +28,75 @@ export default function PracticeQuiz({
   title,
   exitLabel = "Back to Setup",
   overlay = false,
+  sessionKey = null,
+  sessionMeta = null,
+  onSessionRestored,
 }) {
-  const [current, setCurrent] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [answered, setAnswered] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [missed, setMissed] = useState([]);
+  // A saved session wins over the `questions` prop: the caller rebuilds a fresh
+  // random queue on every mount, so honouring it would silently restart the
+  // session the learner was part-way through.
+  const restored = useMemo(() => loadQuizSession(sessionKey), [sessionKey]);
+
+  const [liveQuestions, setLiveQuestions] = useState(() => restored?.questions ?? questions);
+  const [current, setCurrent] = useState(restored?.current ?? 0);
+  const [selected, setSelected] = useState(restored?.selected ?? null);
+  const [answered, setAnswered] = useState(restored?.answered ?? false);
+  const [correctCount, setCorrectCount] = useState(restored?.correctCount ?? 0);
+  const [missed, setMissed] = useState(restored?.missed ?? []);
   const [finished, setFinished] = useState(false);
   const [result, setResult] = useState(null);
-  const [wasCorrect, setWasCorrect] = useState(false);
+  const [wasCorrect, setWasCorrect] = useState(restored?.wasCorrect ?? false);
+  const [resumed, setResumed] = useState(!!restored);
   const advanceTimer = useRef(null);
 
-  const question = questions[current];
-  const isLast = current === questions.length - 1;
+  // Hand the caller back whatever it stashed (Knowledge Check keeps its
+  // per-topic tallies here, which would otherwise be lost and silently produce a
+  // wrong assessment score).
+  const restoredMeta = restored?.meta;
+  useEffect(() => {
+    if (restoredMeta && onSessionRestored) onSessionRestored(restoredMeta);
+    // Only on mount — re-running would replay stale tallies over live ones.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const questionsRef = liveQuestions;
+  const question = questionsRef[current];
+  const isLast = current === questionsRef.length - 1;
   const questionType = question.questionType || "multiple-choice";
 
   useEffect(() => () => clearTimeout(advanceTimer.current), []);
+
+  // Written after every answer and advance, so leaving the overlay — or closing
+  // the tab — costs at most the current question.
+  useEffect(() => {
+    if (!sessionKey || finished) return;
+    saveQuizSession(sessionKey, {
+      questions: questionsRef,
+      current,
+      correctCount,
+      selected,
+      answered,
+      wasCorrect,
+      missed,
+      meta: sessionMeta ?? undefined,
+    });
+  }, [sessionKey, finished, questionsRef, current, correctCount, selected, answered, wasCorrect, missed, sessionMeta]);
+
+  const startOver = () => {
+    clearTimeout(advanceTimer.current);
+    clearQuizSession(sessionKey);
+    setLiveQuestions(questions);
+    setCurrent(0);
+    setSelected(null);
+    setAnswered(false);
+    setCorrectCount(0);
+    setMissed([]);
+    setWasCorrect(false);
+    setFinished(false);
+    setResult(null);
+    setResumed(false);
+    if (onSessionRestored) onSessionRestored(null);
+  };
 
   // Advance to the next question (or finish). `grade` is the FSRS grade to
   // commit for a correct answer; wrong answers are already graded AGAIN.
@@ -54,8 +108,9 @@ export default function PracticeQuiz({
       }
       setWasCorrect(false);
       if (isLast) {
-        const score = Math.round((correctCount / questions.length) * 100);
-        const res = onComplete ? await onComplete(correctCount, questions.length) : {};
+        const score = Math.round((correctCount / questionsRef.length) * 100);
+        const res = onComplete ? await onComplete(correctCount, questionsRef.length) : {};
+        clearQuizSession(sessionKey);
         setResult({ score, ...res });
         setFinished(true);
       } else {
@@ -64,7 +119,7 @@ export default function PracticeQuiz({
         setAnswered(false);
       }
     },
-    [wasCorrect, question, isLast, correctCount, questions.length, onComplete]
+    [wasCorrect, question, isLast, correctCount, questionsRef.length, onComplete, sessionKey]
   );
 
   const handleAnswer = useCallback(
@@ -96,6 +151,8 @@ export default function PracticeQuiz({
 
   const retake = () => {
     clearTimeout(advanceTimer.current);
+    clearQuizSession(sessionKey);
+    setResumed(false);
     setCurrent(0);
     setSelected(null);
     setAnswered(false);
@@ -119,7 +176,7 @@ export default function PracticeQuiz({
           <p className="text-slate-600 mb-1">
             You scored <span className="text-tiq-mint font-mono-tiq font-bold text-lg">{result.score}%</span>
           </p>
-          <p className="text-sm text-slate-500 mb-4">{correctCount} of {questions.length} correct</p>
+          <p className="text-sm text-slate-500 mb-4">{correctCount} of {questionsRef.length} correct</p>
           {result.xpGain > 0 && (
             <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint/10 border border-tiq-mint/30 text-tiq-mint mb-4">
               <Sparkles className="w-4 h-4" />
@@ -220,11 +277,21 @@ export default function PracticeQuiz({
   }
 
   // ---------- Question screen ----------
-  const progressPct = (current / questions.length) * 100;
+  const progressPct = (current / questionsRef.length) * 100;
   const body = (
     <div className="max-w-2xl mx-auto">
+      {resumed && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-3 py-2 rounded-lg bg-tiq-mintLight border border-tiq-border flex-wrap">
+          <p className="text-xs text-slate-600">
+            Picked up where you left off — question {current + 1} of {questionsRef.length}.
+          </p>
+          <button onClick={startOver} className="text-xs font-medium text-tiq-mint hover:text-tiq-ink transition shrink-0">
+            Start over
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-mono-tiq text-slate-500">Question {current + 1} of {questions.length}</span>
+        <span className="text-xs font-mono-tiq text-slate-500">Question {current + 1} of {questionsRef.length}</span>
         <div className="flex-1 h-1 bg-tiq-mintLight rounded-full mx-3 overflow-hidden">
           <div className="h-full bg-tiq-mint transition-all" style={{ width: `${progressPct}%` }} />
         </div>

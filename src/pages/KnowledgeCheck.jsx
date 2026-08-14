@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useProgress } from "@/lib/ProgressContext";
 import PracticeQuiz from "@/components/tradeiq/PracticeQuiz";
+import { getQuizSessionInfo, clearQuizSession } from "@/lib/quizSession";
 import {
   buildAssessment,
   buildImprovementSession,
@@ -53,6 +54,26 @@ export default function KnowledgeCheck() {
   const history = progress?.assessment_history || [];
   const previous = history.length > 1 ? history[history.length - 2] : null;
 
+  // Pending runs, so the buttons can say what they will actually do.
+  const [sessionTick, setSessionTick] = useState(0);
+  const assessPending = useMemo(
+    () => getQuizSessionInfo("knowledge-assess"),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sessionTick, mode]
+  );
+  const boostPending = useMemo(
+    () => getQuizSessionInfo("knowledge-boost"),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sessionTick, mode]
+  );
+
+  const startFresh = (which) => {
+    clearQuizSession(which === "assess" ? "knowledge-assess" : "knowledge-boost");
+    setSessionTick((t) => t + 1);
+    if (which === "assess") startAssessment();
+    else startImprove();
+  };
+
   const startAssessment = () => {
     tallies.current = {};
     setJustScored(null);
@@ -67,6 +88,15 @@ export default function KnowledgeCheck() {
     setMode("improve");
   };
 
+  // Mirrored into state purely so it can be persisted with the session; the ref
+  // stays the source of truth during a run.
+  const [talliesSnapshot, setTalliesSnapshot] = useState({});
+
+  const restoreTallies = useCallback((meta) => {
+    tallies.current = meta && typeof meta === "object" ? { ...meta } : {};
+    setTalliesSnapshot(tallies.current);
+  }, []);
+
   const onQuestionResult = useCallback((topicId, isCorrect, question) => {
     const courseId = question?._courseId || "";
     const key = `${courseId}::${topicId}`;
@@ -74,6 +104,7 @@ export default function KnowledgeCheck() {
     t.total += 1;
     if (isCorrect) t.correct += 1;
     tallies.current[key] = t;
+    setTalliesSnapshot({ ...tallies.current });
   }, []);
 
   const finishAssessment = async () => {
@@ -98,6 +129,9 @@ export default function KnowledgeCheck() {
         title={mode === "assess" ? "Knowledge Check" : "Boost Weak Topics"}
         exitLabel="Back to Knowledge Check"
         overlay
+        sessionKey={mode === "assess" ? "knowledge-assess" : "knowledge-boost"}
+        sessionMeta={talliesSnapshot}
+        onSessionRestored={restoreTallies}
       />
     );
   }
@@ -150,9 +184,19 @@ export default function KnowledgeCheck() {
                 onClick={startAssessment}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition text-sm"
               >
-                {last ? "Reassess" : "Start assessment"}
+                {assessPending
+                  ? `Resume (question ${assessPending.current + 1} of ${assessPending.total})`
+                  : last ? "Reassess" : "Start assessment"}
                 <ArrowRight className="w-4 h-4" />
               </button>
+              {assessPending && (
+                <button
+                  onClick={() => startFresh("assess")}
+                  className="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-xs font-medium"
+                >
+                  Start new assessment
+                </button>
+              )}
               {last && (
                 <p className="text-[11px] text-slate-400 mt-2 text-center">
                   Last assessed {timeAgo(last.date)}
@@ -172,9 +216,19 @@ export default function KnowledgeCheck() {
                 onClick={startImprove}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-tiq-border text-slate-700 font-semibold hover:bg-tiq-mintLight transition text-sm"
               >
-                Start boost session
+                {boostPending
+                  ? `Resume (question ${boostPending.current + 1} of ${boostPending.total})`
+                  : "Start boost session"}
                 <ArrowRight className="w-4 h-4" />
               </button>
+              {boostPending && (
+                <button
+                  onClick={() => startFresh("boost")}
+                  className="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-xs font-medium"
+                >
+                  Start new session
+                </button>
+              )}
             </div>
           </div>
 
