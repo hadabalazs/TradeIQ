@@ -52,8 +52,8 @@ export default function GuestIntro({ courseCount = 0 }) {
           Learn it once. Actually remember it.
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto mb-2">
-          TradeIQ Academy teaches professional subjects — IFRS and commodity trading, Open
-          Finance and more — using how memory actually works, not how courses usually look.
+          TradeIQ Academy teaches professional subjects using a method backed by
+          neuroscience research on how memory actually forms — not how courses usually look.
         </p>
         <p className="text-sm text-slate-500 max-w-2xl mx-auto">
           Most courses are watched once and forgotten within weeks. This one is built to
