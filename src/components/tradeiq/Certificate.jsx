@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { Download, Share2, Loader2, Check, Cloud } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { getCertificateForCourse } from "@/lib/certificates";
+import { useProgress } from "@/lib/ProgressContext";
+import { getCertificateForCourse, issueCertificate } from "@/lib/certificates";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import Logo from "@/components/tradeiq/Logo";
@@ -48,6 +49,10 @@ function CornerFlourish({ className = "" }) {
 
 export default function Certificate({ course, name, score, date, preview = false }) {
   const { isAuthenticated, user } = useAuth();
+  const { progress } = useProgress();
+  // The certificate is real once the course is certified — `preview` is the
+  // caller saying "this is a mock-up", not a statement about entitlement.
+  const isCertified = !!progress?.courses?.[course?.id]?.certified;
   const certRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -72,17 +77,34 @@ export default function Certificate({ course, name, score, date, preview = false
   // verification. Showing an unverifiable id is worse than showing none.
   const [issued, setIssued] = useState(null);
 
+  // Issuance originally fired only at the moment the final assessment was
+  // passed, which left anyone already certified — or certified before the
+  // certificates table existed — permanently without a record, and their
+  // certificate stuck reading "preview". Viewing an earned certificate now
+  // issues one if it is missing, so the record heals itself wherever the
+  // certificate is shown: course dashboard, My Achievements, or the results
+  // screen.
   useEffect(() => {
     let alive = true;
-    if (!isAuthenticated || !user?.id || !course?.id || preview) {
+    if (!isAuthenticated || !user?.id || !course?.id || preview || !isCertified) {
       setIssued(null);
       return () => { alive = false; };
     }
-    getCertificateForCourse(user.id, course.id)
-      .then((row) => alive && setIssued(row))
-      .catch(() => alive && setIssued(null));
+    (async () => {
+      const existing = await getCertificateForCourse(user.id, course.id);
+      if (!alive) return;
+      if (existing) { setIssued(existing); return; }
+      const certId = await issueCertificate({
+        userId: user.id,
+        courseId: course.id,
+        courseTitle: course.certificateTitle || course.title,
+        learnerName: name || user.email?.split("@")[0] || "Learner",
+        score,
+      });
+      if (alive && certId) setIssued({ cert_id: certId });
+    })().catch(() => { /* offline or table absent — falls back below */ });
     return () => { alive = false; };
-  }, [isAuthenticated, user?.id, course?.id, preview]);
+  }, [isAuthenticated, user?.id, course?.id, preview, isCertified, name, score]);
 
   const certId = issued?.cert_id || null;
   const verifyUrl = certId ? `${window.location.origin}/verify/${certId}` : null;
@@ -238,9 +260,18 @@ export default function Certificate({ course, name, score, date, preview = false
                       <p className="text-[8px] text-slate-500 uppercase tracking-wider">Scan to verify</p>
                       <p className="text-[9px] text-tiq-mint font-mono-tiq">{window.location.host}/verify</p>
                     </>
+                  ) : isCertified ? (
+                    // Earned, but no verification record yet. Two distinct
+                    // causes, two distinct instructions — a guest needs to sign
+                    // in, a signed-in learner is simply offline or waiting on
+                    // the certificates table. Never call an earned certificate
+                    // a preview either way.
+                    <p className="text-[8px] text-slate-400 uppercase tracking-wider leading-relaxed">
+                      {isAuthenticated ? "Verification pending" : "Sign in to verify"}
+                    </p>
                   ) : (
                     <p className="text-[8px] text-slate-400 uppercase tracking-wider leading-relaxed">
-                      Preview — sign in to issue a verifiable certificate
+                      Preview — pass the final assessment to earn this
                     </p>
                   )}
                 </div>
@@ -270,7 +301,13 @@ export default function Certificate({ course, name, score, date, preview = false
               {/* Certificate ID + accreditation */}
               <div className="mt-6 pt-4 border-t border-[#B8963E]/15">
                 <p className="text-[9px] text-slate-400 font-mono-tiq tracking-wider">
-                  {certId ? `Certificate ID: ${certId}` : "Not yet issued — preview only"}
+                  {certId
+                    ? `Certificate ID: ${certId}`
+                    : isCertified
+                    ? isAuthenticated
+                      ? "Certificate ID pending — reconnect to issue"
+                      : "Sign in to issue a verifiable certificate ID"
+                    : "Preview only — not yet earned"}
                 </p>
                 <p className="text-[8px] text-slate-400 mt-1 italic">
                   TradeIQ Academy &middot; This certificate does not expire
