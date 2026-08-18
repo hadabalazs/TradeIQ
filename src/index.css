@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Slab:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -32,18 +32,53 @@
 .tiq-scroll::-webkit-scrollbar-thumb { background: rgb(var(--tiq-scroll)); border-radius: 8px; }
 .tiq-scroll::-webkit-scrollbar-thumb:hover { background: rgb(var(--tiq-mint)); }
 
-.font-slab { font-family: 'Roboto Slab', serif; }
-.font-mono-tiq { font-family: 'JetBrains Mono', monospace; }
+/* ---------------------------------------------------------------------------
+   TYPOGRAPHY — one typeface, Inter, everywhere.
+   The app previously ran three families at once: Inter for body, Roboto Slab
+   for every heading, and JetBrains Mono for every number and label. Three
+   competing voices on one screen is what read as inconsistent.
+   Hierarchy now comes from weight, size and letter-spacing rather than from
+   swapping typeface, which is both calmer and one less font to download.
+   The two legacy class names are kept and remapped so 167 usages across the
+   app did not need touching — and so a stray `font-slab` added later still
+   lands on the right face.
+--------------------------------------------------------------------------- */
+:root {
+  --tiq-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Real code only. Monospace here is semantic, not decorative, so it uses the
+     system stack and costs no extra download. */
+  --tiq-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
 
-body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+body {
+  font-family: var(--tiq-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-.tiq-prose h2 { font-family: 'Roboto Slab', serif; color: rgb(var(--tiq-ink)); font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem; }
-.tiq-prose h3 { font-family: 'Roboto Slab', serif; color: rgb(var(--tiq-mint)); font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 .6rem; }
+/* Display / heading treatment — same face, tighter tracking so larger sizes
+   don't look loose. */
+.font-slab {
+  font-family: var(--tiq-sans);
+  letter-spacing: -0.02em;
+}
+
+/* Figures: aligned columns without a monospace voice. Tabular numerals keep
+   scores, XP and percentages from shifting as digits change. */
+.font-mono-tiq {
+  font-family: var(--tiq-sans);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.01em;
+}
+
+.tiq-prose h2 { font-family: var(--tiq-sans); letter-spacing: -0.02em; color: rgb(var(--tiq-ink)); font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem; }
+.tiq-prose h3 { font-family: var(--tiq-sans); letter-spacing: -0.015em; color: rgb(var(--tiq-mint)); font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 .6rem; }
 .tiq-prose p { color: rgb(var(--tiq-prose-body)); line-height: 1.75; margin: 0 0 1rem; }
 .tiq-prose ul, .tiq-prose ol { color: rgb(var(--tiq-prose-body)); line-height: 1.75; margin: 0 0 1rem; padding-left: 1.4rem; }
 .tiq-prose li { margin-bottom: .4rem; }
 .tiq-prose strong { color: rgb(var(--tiq-ink)); font-weight: 600; }
-.tiq-prose code { font-family: 'JetBrains Mono', monospace; background: rgb(var(--tiq-mintLight)); color: rgb(var(--tiq-mint)); padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+.tiq-prose code { font-family: var(--tiq-code); background: rgb(var(--tiq-mintLight)); color: rgb(var(--tiq-mint)); padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
 
 /* Dark mode overrides for common Tailwind utility colors */
 .dark .bg-white { background-color: rgb(var(--tiq-slate)); }
