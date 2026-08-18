@@ -27,6 +27,7 @@ import { IFRS_SORTING_QUESTIONS, OPENFINANCE_SORTING_QUESTIONS } from "@/lib/sor
 import { IFRS_TERM_MATCH_QUESTIONS, OPENFINANCE_TERM_MATCH_QUESTIONS } from "@/lib/termMatchQuestions";
 import { applyOverridesToCourses, indexOverrides, setOverrideIndex } from "@/lib/questionOverrides";
 import { applyCourseOverrides, indexCourseOverrides, setCourseOverrideIndex } from "@/lib/courseOverrides";
+import { applyContentOverrides, indexContentOverrides, setContentOverrideIndex } from "@/lib/contentOverrides";
 
 // Merge sorting + term-match questions into each topic's quiz array at runtime
 function mergeExtraQuestions(modules, sortingMap = {}, termMatchMap = {}) {
@@ -112,8 +113,13 @@ let _customCourses = [];
 // filter to forget when a new surface is added.
 function rebuildCourses() {
   COURSES.length = 0;
+  // Order matters: content edits (lesson text, module overviews) are applied
+  // before question overrides, so a replaced question is matched against the
+  // question set as it actually stands.
   COURSES.push(
-    ...applyCourseOverrides(applyOverridesToCourses([..._builtinCourses, ..._customCourses]))
+    ...applyCourseOverrides(
+      applyOverridesToCourses(applyContentOverrides([..._builtinCourses, ..._customCourses]))
+    )
   );
 }
 
@@ -128,6 +134,12 @@ export function syncCustomCourses(customCourses) {
 // admin suppresses, reinstates or replaces a question.
 export function applyQuestionOverrides(rows) {
   setOverrideIndex(indexOverrides(rows || []));
+  rebuildCourses();
+}
+
+// Admin-edited course body text (module overviews, topic titles, lesson markdown).
+export function applyContentTextOverrides(rows) {
+  setContentOverrideIndex(indexContentOverrides(rows || []));
   rebuildCourses();
 }
 

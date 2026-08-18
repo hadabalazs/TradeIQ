@@ -21,6 +21,7 @@ import ModuleOverview from '@/pages/ModuleOverview';
 import Achievements from '@/pages/Achievements';
 import KnowledgeCheck from '@/pages/KnowledgeCheck';
 import Admin from '@/pages/Admin';
+import AdminCourseEditor from '@/pages/AdminCourseEditor';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
 
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/knowledge-check" element={<KnowledgeCheck />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/course/:courseId" element={<AdminCourseEditor />} />
               </Route>
 
               <Route path="*" element={<PageNotFound />} />

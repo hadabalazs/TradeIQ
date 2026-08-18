@@ -33,8 +33,13 @@ export default function StreakCalendar({ history = [], activeDays = [], streak =
 
   const recapDays = new Set(history);
   const studyDays = new Set(activeDays);
-  const isRecap = (d) => recapDays.has(format(d, "yyyy-MM-dd"));
-  const isStudied = (d) => studyDays.has(format(d, "yyyy-MM-dd"));
+  // A day in the future can never have been studied. Guarding here rather than
+  // trusting the data, because history is merged across devices and a device
+  // with a skewed clock could otherwise stamp tomorrow as done.
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const notFuture = (d) => format(d, "yyyy-MM-dd") <= todayKey;
+  const isRecap = (d) => notFuture(d) && recapDays.has(format(d, "yyyy-MM-dd"));
+  const isStudied = (d) => notFuture(d) && studyDays.has(format(d, "yyyy-MM-dd"));
 
   return (
     <div className="bg-white rounded-xl border border-tiq-border p-5">
@@ -75,11 +80,16 @@ export default function StreakCalendar({ history = [], activeDays = [], streak =
           const studied = isStudied(d);
           const inMonth = isSameMonth(d, month);
           const today = isToday(d);
+          // Only a day actually studied gets a fill. Every other in-month day
+          // used to carry a mint tint, which read as "marked" — so the whole
+          // month, future days included, looked like a perfect streak.
+          const future = !notFuture(d);
           let style;
           if (recap) style = "bg-tiq-mint text-white font-bold";
-          else if (studied) style = "bg-tiq-mint/25 text-tiq-ink font-semibold";
-          else if (inMonth) style = "bg-tiq-mintLight/50 text-slate-600";
-          else style = "text-slate-300";
+          else if (studied) style = "bg-tiq-mint/30 text-tiq-ink font-semibold ring-1 ring-tiq-mint/40";
+          else if (future) style = "text-slate-300";
+          else if (inMonth) style = "text-slate-500";
+          else style = "text-slate-300/70";
           return (
             <div
               key={i}
