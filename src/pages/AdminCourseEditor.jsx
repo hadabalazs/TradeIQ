@@ -57,7 +57,7 @@ function TextField({ label, hint, value, shipped, multiline, rows = 3, onSave, o
         {edited && (
           <button
             onClick={onRevert}
-            disabled={busy}
+            disabled={busy || !installed}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-[11px]"
           >
             <RotateCcw className="w-3 h-3" /> Revert
@@ -117,6 +117,14 @@ export default function AdminCourseEditor() {
   }
 
   const run = async (fn, msg) => {
+    if (!installed) {
+      toast({
+        title: "Saving isn't enabled yet",
+        description: "Run migrations/004_content_overrides.sql first.",
+        variant: "destructive",
+      });
+      return;
+    }
     setBusy(true);
     try {
       await fn();
@@ -154,28 +162,6 @@ export default function AdminCourseEditor() {
       });
     }, suppressed ? "Question reinstated" : "Question removed from the pool");
 
-  if (!installed) {
-    return (
-      <div className="max-w-3xl mx-auto">
-        <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-tiq-ink mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back to admin
-        </Link>
-        <div className="rounded-xl border border-tiq-border bg-white p-5">
-          <div className="flex items-start gap-2.5 text-sm text-slate-600 rounded-lg bg-tiq-mintLight border border-tiq-border p-3.5">
-            <AlertCircle className="w-4 h-4 text-tiq-gold shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-tiq-ink mb-1">Not installed yet</p>
-              <p>
-                Run <code className="font-mono-tiq text-xs">migrations/004_content_overrides.sql</code> in
-                the Supabase SQL editor to enable course editing. Until then courses render exactly as shipped.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto">
       <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-tiq-ink mb-4">
@@ -183,10 +169,26 @@ export default function AdminCourseEditor() {
       </Link>
 
       <h1 className="font-slab text-2xl text-tiq-ink font-bold mb-1">Edit course</h1>
-      <p className="text-sm text-slate-500 mb-6">
+      <p className="text-sm text-slate-500 mb-4">
         {course.title} — every change applies to all learners immediately. Blank a field and
         save to restore the original text.
       </p>
+
+      {/* Reviewing the course must not depend on a migration — only saving does.
+          The whole course renders either way; editing is simply disabled. */}
+      {!installed && (
+        <div className="flex items-start gap-2.5 text-sm text-slate-600 rounded-lg bg-tiq-mintLight border border-tiq-border p-3.5 mb-6">
+          <AlertCircle className="w-4 h-4 text-tiq-gold shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-tiq-ink mb-1">Read-only — saving not enabled yet</p>
+            <p>
+              Run <code className="font-mono-tiq text-xs">migrations/004_content_overrides.sql</code> in
+              the Supabase SQL editor to enable editing. You can review everything below in the
+              meantime.
+            </p>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
@@ -215,13 +217,13 @@ export default function AdminCourseEditor() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <TextField
                         label="Module title" value={content[`module:${mod.id}:title`] ?? ""} shipped={mod.title}
-                        edited={content[`module:${mod.id}:title`] !== undefined} busy={busy}
+                        edited={content[`module:${mod.id}:title`] !== undefined} busy={busy || !installed}
                         onSave={(v) => saveText(`module:${mod.id}:title`, v)}
                         onRevert={() => revertText(`module:${mod.id}:title`)}
                       />
                       <TextField
                         label="Module subtitle" value={content[`module:${mod.id}:subtitle`] ?? ""} shipped={mod.subtitle}
-                        edited={content[`module:${mod.id}:subtitle`] !== undefined} busy={busy}
+                        edited={content[`module:${mod.id}:subtitle`] !== undefined} busy={busy || !installed}
                         onSave={(v) => saveText(`module:${mod.id}:subtitle`, v)}
                         onRevert={() => revertText(`module:${mod.id}:subtitle`)}
                       />
@@ -230,7 +232,7 @@ export default function AdminCourseEditor() {
                       label="Module overview" hint="Markdown. Shown on the module overview page."
                       multiline rows={5}
                       value={content[`module:${mod.id}:overview`] ?? ""} shipped={mod.overview}
-                      edited={content[`module:${mod.id}:overview`] !== undefined} busy={busy}
+                      edited={content[`module:${mod.id}:overview`] !== undefined} busy={busy || !installed}
                       onSave={(v) => saveText(`module:${mod.id}:overview`, v)}
                       onRevert={() => revertText(`module:${mod.id}:overview`)}
                     />
@@ -239,7 +241,7 @@ export default function AdminCourseEditor() {
                       multiline rows={4}
                       value={(content[`module:${mod.id}:objectives`] ?? []).join("\n")}
                       shipped={(mod.objectives || []).join("\n")}
-                      edited={content[`module:${mod.id}:objectives`] !== undefined} busy={busy}
+                      edited={content[`module:${mod.id}:objectives`] !== undefined} busy={busy || !installed}
                       onSave={(v) => saveText(`module:${mod.id}:objectives`, v.split("\n").map((x) => x.trim()).filter(Boolean))}
                       onRevert={() => revertText(`module:${mod.id}:objectives`)}
                     />
@@ -269,7 +271,7 @@ export default function AdminCourseEditor() {
                                   <TextField
                                     label="Lesson title"
                                     value={content[`topic:${topic.id}:title`] ?? ""} shipped={topic.title}
-                                    edited={content[`topic:${topic.id}:title`] !== undefined} busy={busy}
+                                    edited={content[`topic:${topic.id}:title`] !== undefined} busy={busy || !installed}
                                     onSave={(v) => saveText(`topic:${topic.id}:title`, v)}
                                     onRevert={() => revertText(`topic:${topic.id}:title`)}
                                   />
@@ -277,7 +279,7 @@ export default function AdminCourseEditor() {
                                     label="Lesson content" hint="Markdown. Supports {{diagram:id}} placeholders."
                                     multiline rows={14}
                                     value={content[`topic:${topic.id}:lesson`] ?? ""} shipped={topic.lesson}
-                                    edited={content[`topic:${topic.id}:lesson`] !== undefined} busy={busy}
+                                    edited={content[`topic:${topic.id}:lesson`] !== undefined} busy={busy || !installed}
                                     onSave={(v) => saveText(`topic:${topic.id}:lesson`, v)}
                                     onRevert={() => revertText(`topic:${topic.id}:lesson`)}
                                   />
@@ -341,14 +343,14 @@ export default function AdminCourseEditor() {
                                               <div className="flex items-center gap-2 flex-wrap">
                                                 <button
                                                   onClick={() => setEditingQ(qid)}
-                                                  disabled={busy}
+                                                  disabled={busy || !installed}
                                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-tiq-mint text-white font-medium hover:bg-tiq-mint/90 transition text-[11px] disabled:opacity-50"
                                                 >
                                                   <Pencil className="w-3 h-3" /> Edit
                                                 </button>
                                                 <button
                                                   onClick={() => toggleSuppress(qid, found, suppressed)}
-                                                  disabled={busy}
+                                                  disabled={busy || !installed}
                                                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition text-[11px] disabled:opacity-50 ${
                                                     suppressed
                                                       ? "border-tiq-border text-slate-600 hover:bg-tiq-mintLight"
