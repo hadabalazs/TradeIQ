@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { COURSES, syncCustomCourses, applyQuestionOverrides, applyCourseTextOverrides } from '@/lib/courses';
+import { COURSES, syncCustomCourses, applyQuestionOverrides, applyCourseTextOverrides, applyContentTextOverrides } from '@/lib/courses';
 import { fetchOverrides } from '@/lib/questionOverrides';
 import { fetchCourseOverrides } from '@/lib/courseOverrides';
+import { fetchContentOverrides } from '@/lib/contentOverrides';
 import { generateFinalAssessment } from '@/lib/courseUtils';
 import { listCustomCourses } from '@/lib/localStore';
 import { fetchCatalog, cachedCatalog, downloadCourse, removeDownloadedCourse, downloadedCourseIds } from '@/lib/remoteCourses';
@@ -79,6 +80,13 @@ export function CoursesProvider({ children }) {
         forceRender((n) => n + 1);
       })
       .catch(() => {});
+    fetchContentOverrides()
+      .then((rows) => {
+        if (!rows) return;
+        applyContentTextOverrides(rows);
+        forceRender((n) => n + 1);
+      })
+      .catch(() => {});
   }, [loadDownloaded]);
 
   // Re-read overrides after an admin changes one, so the correction is live
@@ -91,6 +99,13 @@ export function CoursesProvider({ children }) {
   }, []);
 
   // Re-read course text after an admin edit, so a rename is live without a reload.
+  const refreshContent = useCallback(async () => {
+    const rows = await fetchContentOverrides();
+    if (!rows) return;
+    applyContentTextOverrides(rows);
+    forceRender((n) => n + 1);
+  }, []);
+
   const refreshCourseText = useCallback(async () => {
     const rows = await fetchCourseOverrides();
     if (!rows) return;
@@ -130,6 +145,7 @@ export function CoursesProvider({ children }) {
       removeDownload,
       refreshOverrides,
       refreshCourseText,
+      refreshContent,
     }}>
       {children}
     </CoursesContext.Provider>

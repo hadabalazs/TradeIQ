@@ -3,6 +3,7 @@ import { Type, RotateCcw, Save, AlertCircle, Award, ChevronDown } from "lucide-r
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { useCourses } from "@/lib/CoursesContext";
+import { Link } from "react-router-dom";
 import {
   fetchCourseOverrides,
   saveCourseOverride,
@@ -167,6 +168,13 @@ export default function CourseTextEditor() {
                       Edited
                     </span>
                   )}
+                  <Link
+                    to={`/admin/course/${course.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[11px] font-medium text-tiq-mint hover:text-tiq-ink transition shrink-0"
+                  >
+                    Edit content →
+                  </Link>
                   <ChevronDown
                     className={`w-4 h-4 text-slate-400 shrink-0 transition ${open ? "rotate-180" : ""}`}
                   />
