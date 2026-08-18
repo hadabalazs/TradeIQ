@@ -52,6 +52,7 @@ function App() {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/knowledge-check" element={<KnowledgeCheck />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/editor" element={<AdminCourseEditor />} />
                 <Route path="/admin/course/:courseId" element={<AdminCourseEditor />} />
               </Route>
 

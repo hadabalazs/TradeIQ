@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, HardDrive, Download, Upload } from "lucide-react";
+import { ArrowLeft, Shield, HardDrive, Download, Upload, FileText, ArrowRight } from "lucide-react";
 import { useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
@@ -130,6 +130,27 @@ export default function Admin() {
           <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={importData} />
         </div>
       </div>
+
+      {/* Course editor — a single obvious button directly under Your Data.
+          Earlier entry points were nested inside other admin sections and were
+          missed; this one stands alone and depends on nothing. */}
+      <Link
+        to="/admin/editor"
+        className="mb-6 flex items-center gap-4 rounded-xl border border-tiq-mint/40 bg-gradient-to-r from-tiq-mint/10 to-tiq-gold/5 p-5 hover:border-tiq-mint transition group"
+      >
+        <div className="w-12 h-12 rounded-lg bg-tiq-mint/15 border border-tiq-mint/30 flex items-center justify-center shrink-0">
+          <FileText className="w-6 h-6 text-tiq-mint" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-slab text-lg text-tiq-ink font-semibold">Course Editor</h2>
+          <p className="text-sm text-slate-600">
+            Read and edit every lesson, question and answer in any course.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white text-sm font-semibold shrink-0 group-hover:gap-2.5 transition-all">
+          Open <ArrowRight className="w-4 h-4" />
+        </span>
+      </Link>
 
       <div className="mt-6 space-y-6">
         <CourseContentManager />

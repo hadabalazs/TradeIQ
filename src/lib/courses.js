@@ -111,6 +111,22 @@ let _customCourses = [];
 // the daily/mixed review SRS pool, expert questions and the final assessment all
 // inherit suppressions and replacements automatically — there is no per-surface
 // filter to forget when a new surface is added.
+// A course id must appear exactly once. Duplicates have shown up in practice
+// from stale localStorage written before downloadCourse deduped its records —
+// the same course then rendered twice in the catalog. Deduping here fixes
+// existing bad data and any future path that adds a course twice, rather than
+// relying on every writer to behave.
+function dedupeById(courses) {
+  const byId = new Map();
+  for (const c of courses) {
+    if (!c?.id) continue;
+    // First wins: built-in courses are pushed before customs, so a custom copy
+    // can never shadow a built-in of the same id.
+    if (!byId.has(c.id)) byId.set(c.id, c);
+  }
+  return [...byId.values()];
+}
+
 function rebuildCourses() {
   COURSES.length = 0;
   // Order matters: content edits (lesson text, module overviews) are applied
@@ -118,7 +134,9 @@ function rebuildCourses() {
   // question set as it actually stands.
   COURSES.push(
     ...applyCourseOverrides(
-      applyOverridesToCourses(applyContentOverrides([..._builtinCourses, ..._customCourses]))
+      applyOverridesToCourses(
+        applyContentOverrides(dedupeById([..._builtinCourses, ..._customCourses]))
+      )
     )
   );
 }
