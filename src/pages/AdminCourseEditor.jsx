@@ -72,7 +72,7 @@ export default function AdminCourseEditor() {
   const { courseId } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { refreshContent, refreshOverrides } = useCourses();
+  const { refreshContent, refreshOverrides, courses: allCourses } = useCourses();
 
   const [installed, setInstalled] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -107,11 +107,51 @@ export default function AdminCourseEditor() {
     );
   }
 
+  // /admin/editor with no course selected: pick one. Keeps the button on the
+  // admin page pointing at a single stable URL.
+  if (!courseId) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-tiq-ink mb-4">
+          <ArrowLeft className="w-4 h-4" /> Back to admin
+        </Link>
+        <h1 className="font-slab text-2xl text-tiq-ink font-bold mb-1">Course Editor</h1>
+        <p className="text-sm text-slate-500 mb-6">
+          Pick a course to read and edit its lessons, questions and answers.
+        </p>
+        <ul className="space-y-2">
+          {(allCourses || []).map((c) => {
+            const modules = (c.modules || []).length;
+            const topics = (c.modules || []).reduce((s2, m) => s2 + (m.topics || []).length, 0);
+            const questions = (c.modules || []).flatMap((m) => m.topics || []).reduce((s2, t) => s2 + (t.quiz || []).length, 0);
+            return (
+              <li key={c.id}>
+                <Link
+                  to={`/admin/course/${c.id}`}
+                  className="flex items-center gap-3 rounded-lg border border-tiq-border bg-white p-4 hover:border-tiq-mint/40 transition"
+                >
+                  <BookOpen className="w-5 h-5 text-tiq-mint shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-tiq-ink truncate">{c.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {modules} modules · {topics} lessons · {questions} questions
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-tiq-mint shrink-0">Open →</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   if (!course) {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <p className="text-slate-600 mb-3">Course not found.</p>
-        <Link to="/admin" className="text-tiq-mint hover:underline text-sm">Back to admin</Link>
+        <Link to="/admin/editor" className="text-tiq-mint hover:underline text-sm">Pick another course</Link>
       </div>
     );
   }
