@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft, ChevronDown, Pencil, Save, RotateCcw, AlertCircle,
+  ArrowLeft, ChevronDown, Pencil, Save, RotateCcw, AlertCircle, X,
   BookOpen, ClipboardList, Shield, EyeOff, Eye,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -21,49 +21,97 @@ import QuestionFullEditor from "@/components/admin/QuestionFullEditor";
 const field =
   "w-full px-3 py-2 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint";
 
-// One editable text field backed by a content override. Blank restores the text
-// the course shipped with, and "Revert" deletes the override outright so the
-// field is byte-identical to the original rather than an empty string.
+// One editable text field backed by a content override.
+//
+// Read-only until you press Edit, matching how questions behave — an admin
+// scrolling a course to review it should not be looking at a page of open
+// textareas, and an always-editable field gives no way to abandon a change
+// short of retyping it. Cancel discards the draft; Revert deletes the override
+// entirely so the field returns byte-identical to what the course shipped with.
 function TextField({ label, hint, value, shipped, multiline, rows = 3, onSave, onRevert, edited, busy }) {
-  const [draft, setDraft] = useState(value ?? "");
-  const [dirty, setDirty] = useState(false);
-  useEffect(() => { setDraft(value ?? ""); setDirty(false); }, [value]);
+  // Effective text: the override when set, otherwise whatever ships.
+  const effective = (value ?? "").toString().trim().length > 0 ? value : (shipped ?? "");
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(effective);
+
+  useEffect(() => { setDraft(effective); }, [effective]);
+
+  // Seed from the EFFECTIVE text, not the override. A lesson that has never been
+  // edited has no override, so seeding from that would open an empty box and
+  // invite someone to retype a page of markdown from scratch.
+  const startEdit = () => { setDraft(effective); setEditing(true); };
+  const cancel = () => { setDraft(effective); setEditing(false); };
+  const commit = async () => { await onSave(draft); setEditing(false); };
 
   const Tag = multiline ? "textarea" : "input";
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-1">
         <label className="text-[11px] font-medium text-tiq-ink">{label}</label>
-        {edited && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-tiq-mint/10 text-tiq-mint">Edited</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {edited && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-tiq-mint/10 text-tiq-mint">Edited</span>
+          )}
+          {!editing && (
+            <button
+              onClick={startEdit}
+              disabled={busy}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-tiq-mint hover:bg-tiq-mintLight transition disabled:opacity-40"
+            >
+              <Pencil className="w-3 h-3" /> Edit
+            </button>
+          )}
+        </div>
       </div>
-      {hint && <p className="text-[11px] text-slate-500 mb-1">{hint}</p>}
-      <Tag
-        value={draft}
-        rows={multiline ? rows : undefined}
-        onChange={(e) => { setDraft(e.target.value); setDirty(true); }}
-        placeholder={shipped || ""}
-        className={`${field} ${multiline ? "resize-y font-mono text-xs leading-relaxed" : ""}`}
-      />
-      <div className="flex items-center gap-2 mt-1.5">
-        <button
-          onClick={() => onSave(draft)}
-          disabled={busy || !dirty}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-tiq-mint text-white font-medium hover:bg-tiq-mint/90 transition text-[11px] disabled:opacity-40"
+      {hint && editing && <p className="text-[11px] text-slate-500 mb-1">{hint}</p>}
+
+      {editing ? (
+        <>
+          <Tag
+            value={draft}
+            rows={multiline ? rows : undefined}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={shipped || ""}
+            className={`${field} ${multiline ? "resize-y font-mono text-xs leading-relaxed" : ""}`}
+          />
+          <div className="flex items-center gap-2 mt-1.5">
+            <button
+              onClick={commit}
+              disabled={busy || draft === effective}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-tiq-mint text-white font-medium hover:bg-tiq-mint/90 transition text-[11px] disabled:opacity-40"
+            >
+              <Save className="w-3 h-3" /> Save
+            </button>
+            <button
+              onClick={cancel}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-[11px]"
+            >
+              <X className="w-3 h-3" /> Cancel
+            </button>
+            {edited && (
+              <button
+                onClick={async () => { await onRevert(); setEditing(false); }}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-[11px]"
+              >
+                <RotateCcw className="w-3 h-3" /> Revert to original
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div
+          className={`w-full px-3 py-2 rounded-lg border border-tiq-border bg-tiq-mintLight/30 text-tiq-ink ${
+            multiline ? "font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto" : "text-sm"
+          }`}
         >
-          <Save className="w-3 h-3" /> Save
-        </button>
-        {edited && (
-          <button
-            onClick={onRevert}
-            disabled={busy || !installed}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-[11px]"
-          >
-            <RotateCcw className="w-3 h-3" /> Revert
-          </button>
-        )}
-      </div>
+          {effective || <span className="text-slate-400 italic">Empty</span>}
+        </div>
+      )}
     </div>
   );
 }
