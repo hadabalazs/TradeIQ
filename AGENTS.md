@@ -1,34 +1,55 @@
 # AGENTS.md
 
-## Project Context
+## Project context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+TradeIQ Academy — a spaced-repetition learning platform. React 18 + Vite 6 +
+Tailwind + shadcn/ui on the front, Supabase for auth, progress sync and the
+course catalog. Deployed on Netlify. See `README.md` for setup and architecture.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
+There is no separate backend to run. `npm run dev` is the whole local
+environment; the app talks to the hosted Supabase project.
 
-## Base44 References
+## Key files
 
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
+- `src/lib/courses.js` — the single place courses are assembled. Built-in
+  curricula, custom courses from Supabase, and three override layers are merged
+  here into the `COURSES` array everything else reads.
+- `src/lib/srs.js` — FSRS scheduling. Cards are keyed by a content hash of the
+  question (`src/lib/questionId.js`).
+- `src/lib/sync.js` + `src/lib/mergeProgress.js` — cross-device progress. This
+  MERGES, it does not overwrite.
+- `src/lib/supabaseClient.js` — URL and publishable key, intentionally committed.
+- `migrations/` — SQL applied by hand in the Supabase SQL editor.
 
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
+## Things that will bite you
+
+- **Apply course changes in `courses.js`, not per screen.** Module quizzes,
+  topic quizzes, practice, daily recap, the review pool, expert questions and
+  the final exam all read the same `COURSES` array. A filter added to one screen
+  is a filter the other six are missing.
+- **`questionId()` is a content hash.** Editing a question changes its id, which
+  orphans every learner's review card for it. Anything that edits a question must
+  record the old and new ids so history can be remapped — see
+  `questionOverrides.js`.
+- **Progress sync must never overwrite.** `mergeProgress.js` unions local and
+  cloud so progress can only grow. The one exception is documented in that file;
+  match the existing reasoning before adding a field.
+- **Built-in courses are compiled into the bundle.** They cannot be edited at
+  runtime. That is why the override tables exist. Anything newly editable needs
+  an override path, not a source edit.
+- **Every migration-backed feature must degrade gracefully.** If the table is
+  absent the UI says so and the app behaves exactly as shipped.
+- **An entry point must not depend on a feature it doesn't use.** Admin sections
+  that hide themselves have twice swallowed the only link to an unrelated tool.
+
+## Before finishing
 
 ```bash
-npx skills add base44/skills
+npm run lint
+npm run build
 ```
 
-## Key Files
-
-- `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
-- `.env.local`: local-only environment values; never commit secrets.
-
-## Working Notes
-
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+Verify behaviour in the browser where the change is observable — the dev server
+is the whole environment, so there is little excuse not to. Admin pages need a
+Supabase account with `app_metadata.role = "admin"`; the client-side check is UI
+convenience, row-level security is the real boundary.
