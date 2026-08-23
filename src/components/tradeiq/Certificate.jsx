@@ -1,51 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Download, Share2, Loader2, Check, Cloud } from "lucide-react";
+import { Download, Share2, Loader2, Check, Cloud, Smartphone, Image as ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useProgress } from "@/lib/ProgressContext";
 import { getCertificateForCourse, issueCertificate } from "@/lib/certificates";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import Logo from "@/components/tradeiq/Logo";
-import OrnateSeal from "@/components/tradeiq/OrnateSeal";
-
-const LIGHT_VARS = {
-  "--tiq-navy": "242 250 246",
-  "--tiq-slate": "255 255 255",
-  "--tiq-gold": "184 150 62",
-  "--tiq-mint": "91 168 142",
-  "--tiq-mintLight": "232 246 239",
-  "--tiq-ink": "26 43 30",
-  "--tiq-border": "213 232 222",
-  "--tiq-prose-body": "74 90 78",
-};
-
-const GUILLOCHE_PATTERN = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">` +
-  `<rect width="50" height="50" fill="#FBF8EF"/>` +
-  `<circle cx="25" cy="25" r="23" fill="none" stroke="#B8963E" stroke-width="0.3" opacity="0.35"/>` +
-  `<circle cx="25" cy="25" r="16" fill="none" stroke="#B8963E" stroke-width="0.3" opacity="0.3"/>` +
-  `<circle cx="25" cy="25" r="9" fill="none" stroke="#B8963E" stroke-width="0.3" opacity="0.25"/>` +
-  `<path d="M0,25 Q12.5,12.5 25,25 T50,25" fill="none" stroke="#5BA88E" stroke-width="0.35" opacity="0.22"/>` +
-  `<path d="M0,25 Q12.5,37.5 25,25 T50,25" fill="none" stroke="#5BA88E" stroke-width="0.35" opacity="0.22"/>` +
-  `<path d="M25,0 Q12.5,12.5 25,25 T25,50" fill="none" stroke="#5BA88E" stroke-width="0.35" opacity="0.22"/>` +
-  `<path d="M25,0 Q37.5,12.5 25,25 T25,50" fill="none" stroke="#5BA88E" stroke-width="0.35" opacity="0.22"/>` +
-  `<circle cx="0" cy="0" r="11" fill="none" stroke="#B8963E" stroke-width="0.25" opacity="0.2"/>` +
-  `<circle cx="50" cy="0" r="11" fill="none" stroke="#B8963E" stroke-width="0.25" opacity="0.2"/>` +
-  `<circle cx="0" cy="50" r="11" fill="none" stroke="#B8963E" stroke-width="0.25" opacity="0.2"/>` +
-  `<circle cx="50" cy="50" r="11" fill="none" stroke="#B8963E" stroke-width="0.25" opacity="0.2"/>` +
-  `</svg>`
-)}`;
-
-function CornerFlourish({ className = "" }) {
-  return (
-    <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2 2 L2 10 M2 2 L10 2" stroke="#B8963E" strokeWidth="0.7" opacity="0.5" />
-      <path d="M2 2 Q9 3 11 8 M2 2 Q3 9 8 11" stroke="#B8963E" strokeWidth="0.4" opacity="0.35" fill="none" />
-      <circle cx="2" cy="2" r="1.1" fill="#B8963E" opacity="0.4" />
-    </svg>
-  );
-}
+import CertificateArtwork, { VARIANT_SIZE } from "@/components/tradeiq/CertificateArtwork";
 
 export default function Certificate({ course, name, score, date, preview = false }) {
   const { isAuthenticated, user } = useAuth();
@@ -54,7 +15,10 @@ export default function Certificate({ course, name, score, date, preview = false
   // caller saying "this is a mock-up", not a statement about entitlement.
   const isCertified = !!progress?.courses?.[course?.id]?.certified;
   const certRef = useRef(null);
-  const [downloading, setDownloading] = useState(false);
+  const portraitRef = useRef(null);
+  const squareRef = useRef(null);
+  // Which format is generating, so only that button shows a spinner.
+  const [downloading, setDownloading] = useState(null);
   const [copied, setCopied] = useState(false);
 
   // The certificate can carry a different name from the catalog — a formal
@@ -112,28 +76,53 @@ export default function Certificate({ course, name, score, date, preview = false
     ? `https://api.qrserver.com/v1/create-qr-code/?size=72x72&margin=0&bgcolor=F5EDD8&color=1A2B1E&data=${encodeURIComponent(verifyUrl)}`
     : null;
 
-  const handleDownload = async () => {
-    if (!certRef.current) return;
-    setDownloading(true);
+  // Three formats from one design.
+  //   classic   the wide certificate, as before
+  //   portrait  A4 portrait PDF — readable on a phone, prints without scaling
+  //   square    1200×1200 JPEG for a LinkedIn post
+  //
+  // JPEG rather than PNG for the social image: LinkedIn re-encodes uploads
+  // anyway, and a photographic-quality JPEG is a fraction of the size, which
+  // matters when someone is posting from a phone.
+  const handleDownload = async (variant) => {
+    const node =
+      variant === "portrait" ? portraitRef.current :
+      variant === "square" ? squareRef.current :
+      certRef.current;
+    if (!node) return;
+
+    setDownloading(variant);
     try {
-      const canvas = await html2canvas(certRef.current, {
+      const size = VARIANT_SIZE[variant];
+      const canvas = await html2canvas(node, {
         scale: 2,
         backgroundColor: "#FBF8EF",
         useCORS: true,
         logging: false,
+        ...(size ? { width: size.w, height: size.h, windowWidth: size.w, windowHeight: size.h } : {}),
       });
-      const imgData = canvas.toDataURL("image/png");
+      const safeName = (name || "Learner").replace(/\s+/g, "_");
+
+      if (variant === "square") {
+        const jpeg = canvas.toDataURL("image/jpeg", 0.92);
+        const a = document.createElement("a");
+        a.href = jpeg;
+        a.download = `TradeIQ_Certificate_${safeName}_LinkedIn.jpg`;
+        a.click();
+        return;
+      }
+
       const pdf = new jsPDF({
-        orientation: "landscape",
+        orientation: canvas.width >= canvas.height ? "landscape" : "portrait",
         unit: "px",
         format: [canvas.width, canvas.height],
       });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`TradeIQ_Certificate_${(name || "Learner").replace(/\s+/g, "_")}.pdf`);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(`TradeIQ_Certificate_${safeName}${variant === "portrait" ? "_Portrait" : ""}.pdf`);
     } catch (e) {
-      console.error("PDF generation failed:", e);
+      console.error("Certificate export failed:", e);
     } finally {
-      setDownloading(false);
+      setDownloading(null);
     }
   };
 
@@ -156,178 +145,64 @@ export default function Certificate({ course, name, score, date, preview = false
     }
   };
 
+  const artProps = {
+    name,
+    courseName,
+    certText,
+    score,
+    formattedDate,
+    certId,
+    qrUrl,
+    isCertified,
+    isAuthenticated,
+    preview,
+    verifyHost: typeof window !== "undefined" ? window.location.host : "",
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Certificate with guilloche border */}
-      <div
-        ref={certRef}
-        style={{ ...LIGHT_VARS, backgroundImage: `url("${GUILLOCHE_PATTERN}")`, backgroundSize: "50px 50px" }}
-        className="rounded-lg shadow-xl"
-      >
-        <div className="rounded-lg p-[14px]">
-          {/* Inner cream area with thin gold border */}
-          <div className="rounded-md bg-[#FEFDF8] border border-[#B8963E]/25 relative overflow-hidden">
-            {/* Background watermark — guilloche rosette */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-              <svg width="400" height="400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {Array.from({ length: 20 }).map((_, i) => (
-                  <circle key={`wc${i}`} cx="50" cy="50" r={4 + i * 2.2} fill="none" stroke="#5BA88E" strokeWidth="0.15" />
-                ))}
-                {Array.from({ length: 36 }).map((_, i) => {
-                  const a = (i * 10) * Math.PI / 180;
-                  return (
-                    <line key={`wl${i}`} x1="50" y1="50"
-                      x2={50 + 45 * Math.cos(a)} y2={50 + 45 * Math.sin(a)}
-                      stroke="#5BA88E" strokeWidth="0.08" opacity="0.5" />
-                  );
-                })}
-              </svg>
-            </div>
+      <div ref={certRef}>
+        <CertificateArtwork variant="classic" {...artProps} />
+      </div>
 
-            {/* Corner flourishes */}
-            <CornerFlourish className="absolute top-3 left-3" />
-            <CornerFlourish className="absolute top-3 right-3 rotate-90" />
-            <CornerFlourish className="absolute bottom-3 left-3 -rotate-90" />
-            <CornerFlourish className="absolute bottom-3 right-3 rotate-180" />
-
-            {/* Preview watermark */}
-            {preview && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <span
-                  className="font-slab font-bold text-[#B8963E] select-none"
-                  style={{
-                    fontSize: "6rem",
-                    opacity: 0.10,
-                    transform: "rotate(-30deg)",
-                    letterSpacing: "0.15em",
-                  }}
-                >
-                  PREVIEW
-                </span>
-              </div>
-            )}
-
-            {/* Content */}
-            <div className="relative p-8 sm:p-12 text-center">
-              {/* Header: logo + academy name */}
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Logo size={26} />
-                <h2 className="font-slab text-base text-tiq-ink font-bold">TradeIQ Academy</h2>
-              </div>
-              <div className="flex items-center justify-center gap-2 mb-6">
-                <div className="w-8 h-px bg-[#B8963E]/30" />
-                <div className="w-1 h-1 rounded-full bg-[#B8963E]/40" />
-                <div className="w-8 h-px bg-[#B8963E]/30" />
-              </div>
-
-              {/* Ornate seal */}
-              <OrnateSeal size={84} className="mx-auto mb-4" />
-
-              {/* Title */}
-              <p className="text-[11px] tracking-[0.42em] text-tiq-mint uppercase mb-2 font-semibold">
-                Certificate of Completion
-              </p>
-              <div className="flex items-center justify-center gap-2 mb-5">
-                <div className="w-10 h-px bg-[#B8963E]/40" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#B8963E]/50" />
-                <div className="w-10 h-px bg-[#B8963E]/40" />
-              </div>
-
-              {/* Recipient */}
-              <p className="text-slate-500 text-sm mb-3 italic">This is to certify that</p>
-              <p className="font-slab text-2xl sm:text-3xl text-[#B8963E] font-bold border-b border-[#B8963E]/30 inline-block px-8 pb-1 mb-4">
-                {name || "Learner"}
-              </p>
-
-              {/* Course */}
-              <p className="text-slate-500 text-sm mb-1">has successfully completed all requirements of the</p>
-              <p className="font-slab text-lg text-tiq-ink font-bold mb-3">{courseName}</p>
-              <p className="text-slate-600 text-xs max-w-md mx-auto mb-7 leading-relaxed">{certText}</p>
-
-              {/* QR + Score + Date — aligned 3-column grid */}
-              <div className="grid grid-cols-3 items-start max-w-lg mx-auto gap-4">
-                {/* QR code + verify URL — only for an issued certificate, since a
-                    QR pointing at an id that cannot be verified is worse than none. */}
-                <div className="text-center">
-                  {qrUrl ? (
-                    <>
-                      <img
-                        src={qrUrl}
-                        crossOrigin="anonymous"
-                        alt="Scan to verify this certificate"
-                        className="w-12 h-12 rounded-sm border border-[#B8963E]/20 mx-auto mb-1"
-                      />
-                      <p className="text-[8px] text-slate-500 uppercase tracking-wider">Scan to verify</p>
-                      <p className="text-[9px] text-tiq-mint font-mono-tiq">{window.location.host}/verify</p>
-                    </>
-                  ) : isCertified ? (
-                    // Earned, but no verification record yet. Two distinct
-                    // causes, two distinct instructions — a guest needs to sign
-                    // in, a signed-in learner is simply offline or waiting on
-                    // the certificates table. Never call an earned certificate
-                    // a preview either way.
-                    <p className="text-[8px] text-slate-400 uppercase tracking-wider leading-relaxed">
-                      {isAuthenticated ? "Verification pending" : "Sign in to verify"}
-                    </p>
-                  ) : (
-                    <p className="text-[8px] text-slate-400 uppercase tracking-wider leading-relaxed">
-                      Preview — pass the final assessment to earn this
-                    </p>
-                  )}
-                </div>
-
-                {/* Score */}
-                <div className="text-center">
-                  <p className="text-[8px] text-slate-500 uppercase tracking-wider mb-1">Final Score</p>
-                  <p className="font-mono-tiq text-xl text-tiq-ink font-bold mb-5">{score}%</p>
-                </div>
-
-                {/* Date */}
-                <div className="text-center">
-                  <p className="text-[8px] text-slate-500 uppercase tracking-wider mb-1">Date of Completion</p>
-                  <p className="text-xs text-tiq-ink font-medium mb-5">{formattedDate}</p>
-                </div>
-              </div>
-
-              {/* Signature line */}
-              <div className="max-w-xs mx-auto pt-2">
-                <div className="text-center">
-                  <p className="font-slab text-tiq-ink text-xs italic mb-1">TradeIQ Academy</p>
-                  <div className="w-full h-px bg-tiq-ink/30 mb-1" />
-                  <p className="text-[8px] text-slate-500 uppercase tracking-wider">Issued By</p>
-                </div>
-              </div>
-
-              {/* Certificate ID + accreditation */}
-              <div className="mt-6 pt-4 border-t border-[#B8963E]/15">
-                <p className="text-[9px] text-slate-400 font-mono-tiq tracking-wider">
-                  {certId
-                    ? `Certificate ID: ${certId}`
-                    : isCertified
-                    ? isAuthenticated
-                      ? "Certificate ID pending — reconnect to issue"
-                      : "Sign in to issue a verifiable certificate ID"
-                    : "Preview only — not yet earned"}
-                </p>
-                <p className="text-[8px] text-slate-400 mt-1 italic">
-                  TradeIQ Academy &middot; This certificate does not expire
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Export layouts, rendered off-screen at their exact pixel size.
+          html2canvas captures a live node, so the alternate formats have to
+          exist in the document — but they must never affect the visible page,
+          hence fixed positioning far off-canvas rather than display:none, which
+          would give them no dimensions to capture. */}
+      <div aria-hidden="true" style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none", opacity: 0 }}>
+        <div ref={portraitRef}><CertificateArtwork variant="portrait" {...artProps} /></div>
+        <div ref={squareRef}><CertificateArtwork variant="square" {...artProps} /></div>
       </div>
 
       {/* Action buttons — generating the certificate requires an account */}
       {isAuthenticated ? (
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
           <button
-            onClick={handleDownload}
-            disabled={downloading}
+            onClick={() => handleDownload("classic")}
+            disabled={!!downloading}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tiq-mint text-white font-semibold hover:bg-tiq-mint/90 transition disabled:opacity-50"
           >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {downloading ? "Generating..." : "Download PDF"}
+            {downloading === "classic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloading === "classic" ? "Generating…" : "PDF — wide"}
+          </button>
+          <button
+            onClick={() => handleDownload("portrait")}
+            disabled={!!downloading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-tiq-border text-slate-700 font-medium hover:bg-tiq-mintLight transition disabled:opacity-50"
+            title="A4 portrait — reads well on a phone and prints cleanly"
+          >
+            {downloading === "portrait" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+            {downloading === "portrait" ? "Generating…" : "PDF — portrait"}
+          </button>
+          <button
+            onClick={() => handleDownload("square")}
+            disabled={!!downloading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-tiq-border text-slate-700 font-medium hover:bg-tiq-mintLight transition disabled:opacity-50"
+            title="1200×1200 JPEG, composed for a LinkedIn post"
+          >
+            {downloading === "square" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            {downloading === "square" ? "Generating…" : "JPEG — for LinkedIn"}
           </button>
           <button
             onClick={handleShare}

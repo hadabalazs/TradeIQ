@@ -1,5 +1,6 @@
-// Local storage backed store for custom courses and lesson notes.
-// Replaces the Base44 CustomCourse entity and communityNotes function.
+// Local storage backed store for downloaded custom courses and lesson notes.
+// These stay on the device: notes are private to the learner, and a downloaded
+// course must keep working offline.
 
 const COURSES_KEY = 'tradeiq_custom_courses';
 const NOTES_KEY = 'tradeiq_lesson_notes';
