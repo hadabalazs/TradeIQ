@@ -18,7 +18,7 @@ environment; the app talks to the hosted Supabase project.
   question (`src/lib/questionId.js`).
 - `src/lib/sync.js` + `src/lib/mergeProgress.js` — cross-device progress. This
   MERGES, it does not overwrite.
-- `src/lib/supabaseClient.js` — URL and publishable key, intentionally committed.
+- `src/lib/supabaseClient.js` — Supabase client configuration.
 - `migrations/` — SQL applied by hand in the Supabase SQL editor.
 
 ## Things that will bite you

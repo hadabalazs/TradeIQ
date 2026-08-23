@@ -141,7 +141,7 @@ function rebuildCourses() {
   );
 }
 
-// Sync custom courses (loaded from the CustomCourse entity by CoursesContext)
+// Sync downloaded custom courses (loaded from local storage by CoursesContext)
 // into the COURSES array. Rebuilds the array from built-in + custom each time.
 export function syncCustomCourses(customCourses) {
   _customCourses = customCourses;

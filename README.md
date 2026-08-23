@@ -40,17 +40,15 @@ account adds cross-device sync and a verifiable certificate.
 
 ## Running locally
 
-Requires Node 20+.
+Requires Node 18 or newer — Vite 6 supports `^18 || ^20 || >=22`.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite prints a local URL. No backend to run — the app talks to the hosted
-Supabase project, whose URL and publishable key are committed in
-`src/lib/supabaseClient.js`. That key is meant to be public; row-level security
-is what protects user data.
+Vite prints a local URL. There is no separate backend to run — the app talks to
+the hosted Supabase project, configured in `src/lib/supabaseClient.js`.
 
 Other scripts:
 
