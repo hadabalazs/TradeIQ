@@ -151,8 +151,8 @@ export default function CourseCatalog() {
               TradeIQ Academy
             </h1>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Master professional skills with expert-led courses. Learn at your own pace,
-              track your progress, and earn certificates.
+              Master professional skills with neuroscience backed memory boosting practices.
+              Learn at your own pace, track your progress, and earn certificates.
             </p>
           </div>
 
