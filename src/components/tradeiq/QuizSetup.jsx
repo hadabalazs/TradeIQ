@@ -12,7 +12,7 @@ export default function QuizSetup({ course, onStart }) {
       <div className="mb-6">
         <h2 className="font-slab text-2xl text-tiq-ink font-bold mb-1">Practice Quiz</h2>
         <p className="text-slate-600 text-sm">
-          Test your knowledge — quiz only, no lesson. Review missed answers at the end.
+          Quiz only, no lesson. You can review whatever you missed at the end.
         </p>
       </div>
 

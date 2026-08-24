@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Per-course link previews. The SPA serves one HTML shell for every route, and
+# social crawlers do not run JavaScript, so the meta tags have to be injected
+# server-side. See netlify/edge-functions/social-meta.js.
+[[edge_functions]]
+  path = "/*"
+  function = "social-meta"

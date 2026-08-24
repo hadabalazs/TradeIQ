@@ -4,6 +4,8 @@ import { Trophy, Lock, ArrowRight, Sparkles, Award, TrendingUp, Flame, Zap, Thea
 import { courseMastery, retentionScore } from "@/lib/srs";
 import { getCourse } from "@/lib/courses";
 import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
+import { useAuth } from "@/lib/AuthContext";
+import { usePageTitle } from "@/lib/usePageTitle";
 import ModuleCard from "@/components/tradeiq/ModuleCard";
 import EnrollCourse from "@/components/tradeiq/EnrollCourse";
 import CourseIntro from "@/components/tradeiq/CourseIntro";
@@ -17,9 +19,12 @@ export default function Dashboard() {
   const { courseId } = useParams();
   const course = getCourse(courseId);
   const { progress } = useProgress();
+  const { isAuthenticated } = useAuth();
   const { isCompleted } = useDilemmaCompletions();
   const [selectedDilemma, setSelectedDilemma] = useState(null);
   const [showDilemmas, setShowDilemmas] = useState(false);
+
+  usePageTitle(course?.title);
 
   const courseDilemmas = course ? getDilemmasForCourse(course.id) : [];
   const completedDilemmaCount = courseDilemmas.filter((d) => isCompleted(course?.id, d.id)).length;
@@ -46,6 +51,38 @@ export default function Dashboard() {
   const hasActivity = completed.length > 0 || Object.keys(courseProg.quiz_scores || {}).length > 0;
   const needsEnroll = !courseProg.enrolled && !hasActivity;
 
+  // A signed-out visitor is usually here from a shared link and is deciding
+  // whether to start. The certificate is the clearest answer to "what do I get
+  // out of this", so it goes directly under the call to action rather than at
+  // the foot of the page. Once someone is signed in it belongs at the bottom,
+  // where it reads as the reward at the end of the module list.
+  const showCertificateEarly = !isAuthenticated;
+
+  const certificateBlock = (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <Award className="w-5 h-5 text-tiq-gold shrink-0" />
+        <h2 className="font-slab text-xl text-tiq-ink font-bold">
+          {courseProg.certified ? "Your Certificate" : "What you'll earn"}
+        </h2>
+      </div>
+      <Certificate
+        course={course}
+        name={progress?.user_name || "Your Name"}
+        score={courseProg.final_assessment_score || 0}
+        date={courseProg.certified ? new Date() : null}
+        preview={!courseProg.certified}
+      />
+      {!courseProg.certified && (
+        <p className="text-center text-sm text-slate-500 mt-4">
+          {allDone
+            ? "Pass the final assessment to earn your certificate."
+            : `Complete all ${totalTopics} topics and pass the final assessment to earn your certificate.`}
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero */}
@@ -69,6 +106,8 @@ export default function Dashboard() {
       <CourseIntro course={course} compact={hasActivity} />
 
       {needsEnroll && <EnrollCourse course={course} />}
+
+      {showCertificateEarly && certificateBlock}
 
       {/* Stats row — every figure here is about the learner's own progress, so
           six zeroes is the whole story for someone who just arrived from a
@@ -104,7 +143,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-slate-600">
-            Review random questions from what you've already learned and keep your streak going.
+            Questions drawn from what you've already covered, to keep your streak going.
           </p>
         </Link>
         <Link
@@ -121,7 +160,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-slate-600">
-            Test your knowledge with quiz-only mode. Review missed answers at the end.
+            Quiz-only mode, no lessons. You can review whatever you missed at the end.
           </p>
         </Link>
       </div>
@@ -214,29 +253,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Certificate preview */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <Award className="w-5 h-5 text-tiq-gold shrink-0" />
-          <h2 className="font-slab text-xl text-tiq-ink font-bold">
-            {courseProg.certified ? "Your Certificate" : "Certificate Preview"}
-          </h2>
-        </div>
-        <Certificate
-          course={course}
-          name={progress?.user_name || "Your Name"}
-          score={courseProg.final_assessment_score || 0}
-          date={courseProg.certified ? new Date() : null}
-          preview={!courseProg.certified}
-        />
-        {!courseProg.certified && (
-          <p className="text-center text-sm text-slate-500 mt-4">
-            {allDone
-              ? "Pass the final assessment to earn your certificate."
-              : `Complete all ${totalTopics} topics and pass the final assessment to earn your certificate.`}
-          </p>
-        )}
-      </div>
+      {!showCertificateEarly && certificateBlock}
 
       {/* Dilemma modal */}
       {selectedDilemma && (

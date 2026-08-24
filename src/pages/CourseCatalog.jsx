@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { TrendingUp, Building2, ArrowRight, Sparkles, Award, Flame, BookOpen, GraduationCap, Lightbulb, Briefcase, Shield, Code, FlaskConical, Globe, LineChart, Scale, Banknote, Cpu, Rocket } from "lucide-react";
 import { getNextStep } from "@/lib/courses";
 import { useCourses } from "@/lib/CoursesContext";
-import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
+import { useProgress, overallPercent, levelFromXp, isEnrolledIn } from "@/lib/ProgressContext";
 import Logo from "@/components/tradeiq/Logo";
 import GuestIntro from "@/components/tradeiq/GuestIntro";
 import { useAuth } from "@/lib/AuthContext";
@@ -53,19 +53,7 @@ export default function CourseCatalog() {
     setSending(false);
   };
 
-  // "Mine" means explicitly enrolled OR already under way — existing learners
-  // never clicked an Enroll button, so activity has to count as enrolment or
-  // their in-progress courses would sit in the browse list.
-  const isMine = (course) => {
-    const cp = progress?.courses?.[course.id];
-    if (!cp) return false;
-    return (
-      !!cp.enrolled ||
-      (cp.completed_topics || []).length > 0 ||
-      Object.keys(cp.quiz_scores || {}).length > 0 ||
-      !!cp.certified
-    );
-  };
+  const isMine = (course) => isEnrolledIn(progress, course.id);
 
   const myCourses = courses.filter(isMine);
   const otherCourses = courses.filter((c) => !isMine(c));
@@ -139,7 +127,7 @@ export default function CourseCatalog() {
           A signed-in learner needs their own numbers — "0 XP · Level 1 · 0 day
           streak" tells a guest nothing and explains nothing. */}
       {!isAuthenticated ? (
-        <GuestIntro courseCount={courses.length} />
+        <GuestIntro />
       ) : (
         <>
           {/* Hero */}
@@ -242,7 +230,7 @@ export default function CourseCatalog() {
             <h2 className="font-slab text-xl text-tiq-ink font-bold">More Courses</h2>
           </div>
           <p className="text-sm text-slate-500 mb-5">
-            Download the courses that interest you — once downloaded, they work fully offline.
+            Download the courses that interest you. Once downloaded, they work fully offline.
           </p>
           <div className="grid sm:grid-cols-2 gap-5">
             {availableCourses.map((c) => {

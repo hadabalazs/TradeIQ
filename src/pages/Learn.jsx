@@ -5,6 +5,7 @@ import { getCourse, getTopic, isModuleUnlocked } from "@/lib/courses";
 import { useProgress } from "@/lib/ProgressContext";
 import LessonView from "@/components/tradeiq/LessonView";
 import QuizView from "@/components/tradeiq/QuizView";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function Learn() {
   const { courseId, topicId } = useParams();
@@ -13,6 +14,11 @@ export default function Learn() {
   const [mode, setMode] = useState("lesson");
 
   const course = getCourse(courseId);
+  usePageTitle(
+    course && getTopic(course, topicId)
+      ? `${getTopic(course, topicId).topic.title} · ${course.title}`
+      : course?.title
+  );
 
   useEffect(() => {
     setMode("lesson");
