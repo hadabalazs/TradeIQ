@@ -7,7 +7,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { useCourses } from "@/lib/CoursesContext";
-import { adminListCourses, adminDeleteCourse } from "@/lib/remoteCourses";
+import { adminDeleteCourse } from "@/lib/remoteCourses";
+import { useAdminCourses } from "@/lib/useAdminCourses";
 import {
   fetchCourseOverrides, saveCourseOverride, clearCourseOverride,
 } from "@/lib/courseOverrides";
@@ -37,7 +38,9 @@ function Field({ label, hint, value, placeholder, onChange, multiline = false })
 export default function AdminCourses() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { courses, refreshCourseText, reloadCourses } = useCourses();
+  const { refreshCourseText, reloadCourses } = useCourses();
+  // Every published course, including ones not downloaded to this device.
+  const { courses, remoteIds, reload: reloadAdminList } = useAdminCourses();
 
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
@@ -50,18 +53,11 @@ export default function AdminCourses() {
   const [openId, setOpenId] = useState(null);
   const [busy, setBusy] = useState(null);
 
-  // Which course ids came from the database, so built-ins can be marked as
-  // undeletable rather than offering a delete that would fail.
-  const [customIds, setCustomIds] = useState(() => new Set());
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [rows, custom] = await Promise.all([
-      fetchCourseOverrides(),
-      adminListCourses().catch(() => []),
-    ]);
-    setCustomIds(new Set((custom || []).map((c) => c.course_id || c.id)));
+    const rows = await fetchCourseOverrides();
     if (!rows) {
       setInstalled(false);
       setLoading(false);
@@ -90,24 +86,24 @@ export default function AdminCourses() {
 
   const sourceOptions = useMemo(() => {
     const all = courses || [];
-    const custom = all.filter((c) => customIds.has(c.id)).length;
+    const custom = all.filter((c) => remoteIds.has(c.id)).length;
     return [
       { id: "all", label: "All", count: all.length },
       { id: "builtin", label: "Built-in", count: all.length - custom },
       { id: "custom", label: "Uploaded", count: custom },
     ];
-  }, [courses, customIds]);
+  }, [courses, remoteIds]);
 
   const filtered = useMemo(() => {
     return (courses || []).filter((c) => {
-      if (source === "custom" && !customIds.has(c.id)) return false;
-      if (source === "builtin" && customIds.has(c.id)) return false;
+      if (source === "custom" && !remoteIds.has(c.id)) return false;
+      if (source === "builtin" && remoteIds.has(c.id)) return false;
       if (category !== "all" && (c.category || "Uncategorised") !== category) return false;
       // Searching the id and category too: an admin chasing a specific course
       // often has the slug from a URL or an export rather than the exact title.
       return matchesQuery(query, c.title, c.subtitle, c.description, c.id, c.category, c.certificateTitle);
     });
-  }, [courses, customIds, source, category, query]);
+  }, [courses, remoteIds, source, category, query]);
 
   const draftFor = (course) => {
     if (drafts[course.id]) return drafts[course.id];
@@ -158,6 +154,7 @@ export default function AdminCourses() {
     try {
       await adminDeleteCourse(course.id);
       await reloadCourses();
+      await reloadAdminList();
       await load();
       setConfirmDelete(null);
       toast({ title: "Course deleted", description: `"${course.title}" has been removed.` });
@@ -221,12 +218,12 @@ export default function AdminCourses() {
                 const dirty = !!drafts[course.id];
                 const open = openId === course.id;
                 const working = busy === course.id;
-                const isCustom = customIds.has(course.id);
-                const modules = (course.modules || []).length;
-                const topics = (course.modules || []).reduce((s, m) => s + (m.topics || []).length, 0);
-                const questions = (course.modules || [])
-                  .flatMap((m) => m.topics || [])
-                  .reduce((s, t) => s + (t.quiz || []).length, 0);
+                const isCustom = remoteIds.has(course.id);
+                const modules = course.modulesCount;
+                const topics = course.topicsCount;
+                const questions = course.full
+                  ? (course.modules || []).flatMap((m) => m.topics || []).reduce((s, t) => s + (t.quiz || []).length, 0)
+                  : null;
 
                 return (
                   <li key={course.id} className="rounded-lg border border-tiq-border">
@@ -247,7 +244,7 @@ export default function AdminCourses() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 truncate">
-                          {course.category || "Uncategorised"} · {modules} modules · {topics} lessons · {questions} questions
+                          {course.category || "Uncategorised"} · {modules} modules · {topics} lessons{questions != null ? ` · ${questions} questions` : ""}
                         </p>
                         <p className="text-[11px] text-slate-400 font-mono-tiq truncate">{course.id}</p>
                       </button>

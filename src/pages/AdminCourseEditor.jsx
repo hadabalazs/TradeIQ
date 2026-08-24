@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import { isAdminUser } from "@/lib/adminRole";
 import { useCourses } from "@/lib/CoursesContext";
+import { useAdminCourses } from "@/lib/useAdminCourses";
 import { getCourse } from "@/lib/courses";
 import { questionId } from "@/lib/questionId";
 import {
@@ -121,7 +122,9 @@ export default function AdminCourseEditor() {
   const { courseId } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { refreshContent, refreshOverrides, courses: allCourses } = useCourses();
+  const { refreshContent, refreshOverrides } = useCourses();
+  // Every published course, so the picker is not limited to local downloads.
+  const { courses: allCourses } = useAdminCourses();
 
   const [installed, setInstalled] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -228,9 +231,11 @@ export default function AdminCourseEditor() {
         ) : (
         <ul className="space-y-2">
           {pickedCourses.map((c) => {
-            const modules = (c.modules || []).length;
-            const topics = (c.modules || []).reduce((s2, m) => s2 + (m.topics || []).length, 0);
-            const questions = (c.modules || []).flatMap((m) => m.topics || []).reduce((s2, t) => s2 + (t.quiz || []).length, 0);
+            const modules = c.modulesCount;
+            const topics = c.topicsCount;
+            const questions = c.full
+              ? (c.modules || []).flatMap((m) => m.topics || []).reduce((s2, t) => s2 + (t.quiz || []).length, 0)
+              : null;
             return (
               <li key={c.id}>
                 <Link
@@ -241,7 +246,7 @@ export default function AdminCourseEditor() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-tiq-ink truncate">{c.title}</p>
                     <p className="text-xs text-slate-500">
-                      {modules} modules · {topics} lessons · {questions} questions
+                      {modules} modules · {topics} lessons{questions != null ? ` · ${questions} questions` : ""}
                     </p>
                   </div>
                   <span className="text-xs font-medium text-tiq-mint shrink-0">Open →</span>
