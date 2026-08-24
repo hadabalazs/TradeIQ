@@ -17,7 +17,7 @@ import {
   fetchOverrides, replaceQuestion, suppressQuestion, clearOverride,
 } from "@/lib/questionOverrides";
 import QuestionFullEditor from "@/components/admin/QuestionFullEditor";
-import { SearchBox, FilterChips, ResultCount, EmptyState, matchesQuery } from "@/components/admin/AdminUI";
+import { SearchBox, ResultCount, EmptyState, matchesQuery } from "@/components/admin/AdminUI";
 
 const field =
   "w-full px-3 py-2 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint";

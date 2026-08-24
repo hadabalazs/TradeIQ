@@ -30,3 +30,6 @@ dist-ssr
 
 .env
 .vite
+
+# Generated at build time by scripts/generate-course-meta.mjs
+public/course-meta.json
