@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { COURSES, syncCustomCourses, applyQuestionOverrides, applyCourseTextOverrides, applyContentTextOverrides } from '@/lib/courses';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { COURSES, syncCustomCourses, addViewedCourse, applyQuestionOverrides, applyCourseTextOverrides, applyContentTextOverrides } from '@/lib/courses';
 import { fetchOverrides } from '@/lib/questionOverrides';
 import { fetchCourseOverrides } from '@/lib/courseOverrides';
 import { fetchContentOverrides } from '@/lib/contentOverrides';
 import { generateFinalAssessment } from '@/lib/courseUtils';
 import { listCustomCourses } from '@/lib/localStore';
-import { fetchCatalog, cachedCatalog, downloadCourse, removeDownloadedCourse, downloadedCourseIds } from '@/lib/remoteCourses';
+import { fetchCatalog, cachedCatalog, downloadCourse, fetchCourseById, removeDownloadedCourse, downloadedCourseIds } from '@/lib/remoteCourses';
 
 const CoursesContext = createContext(null);
 
@@ -16,6 +16,10 @@ function entityToCourse(entity) {
     title: entity.title,
     subtitle: entity.subtitle || '',
     description: entity.description || '',
+    // The intro lives in course_data rather than its own column, so it has to be
+    // lifted out here. Without this an uploaded course's intro was dropped and
+    // the course page fell back to the one-line catalog description.
+    intro: data.intro || '',
     category: entity.category || 'General',
     level: entity.level || 'Intermediate',
     certificateText: entity.certificate_text || entity.title,
@@ -118,6 +122,40 @@ export function CoursesProvider({ children }) {
     loadDownloaded();
   }, [loadDownloaded]);
 
+  // Resolve a course that is not in the local registry by fetching it.
+  //
+  // Uploaded courses only entered the registry once downloaded, so any link to
+  // one — exactly the links that get shared — rendered "Course not found" for
+  // everyone who had not already downloaded it. Built-in courses are compiled
+  // into the bundle and so never showed the problem, which is why it survived
+  // this long.
+  //
+  // Returns true when the course is available afterwards. Each id is attempted
+  // once: a genuinely missing course must not re-request on every render.
+  const attempted = useRef(new Set());
+  const [resolving, setResolving] = useState(false);
+
+  const ensureCourse = useCallback(async (courseId) => {
+    if (!courseId) return false;
+    if (COURSES.some((c) => c.id === courseId)) return true;
+    if (attempted.current.has(courseId)) return false;
+    attempted.current.add(courseId);
+
+    setResolving(true);
+    try {
+      const row = await fetchCourseById(courseId);
+      if (!row) return false;
+      addViewedCourse(entityToCourse(row));
+      forceRender((n) => n + 1);
+      return true;
+    } catch {
+      // Offline, or the row is not readable. The page falls back to not-found.
+      return false;
+    } finally {
+      setResolving(false);
+    }
+  }, []);
+
   const removeDownload = useCallback((courseId) => {
     removeDownloadedCourse(courseId);
     loadDownloaded();
@@ -142,6 +180,8 @@ export function CoursesProvider({ children }) {
       availableCourses: available,
       downloadedIds,
       downloadCourse: download,
+      ensureCourse,
+      resolvingCourse: resolving,
       removeDownload,
       refreshOverrides,
       refreshCourseText,

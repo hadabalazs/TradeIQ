@@ -62,6 +62,22 @@ export async function downloadCourse(courseId) {
   return data.course_id;
 }
 
+// Read one published course without downloading it.
+//
+// downloadCourse() persists the course for offline use and marks it as the
+// learner's. Someone arriving on a shared link has done neither — they are
+// just looking — so viewing must not write anything to their device.
+export async function fetchCourseById(courseId) {
+  const { data, error } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('course_id', courseId)
+    .eq('is_published', true)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
 export function removeDownloadedCourse(courseId) {
   const existing = listCustomCourses({ course_id: courseId });
   for (const rec of existing) deleteCustomCourse(rec.id);
