@@ -7,6 +7,7 @@
 // lesson shows up everywhere that lesson is read, with no per-surface wiring.
 //
 // Overrides are keyed by a PATH rather than a column per field:
+//   course:intro
 //   module:<moduleId>:title | subtitle | overview | objectives
 //   topic:<topicId>:title | lesson
 // Adding a newly editable field then needs no migration — only this file and
@@ -48,6 +49,7 @@ export function applyContentOverride(course) {
   const cid = course.id;
   return {
     ...course,
+    intro: pick(cid, 'course:intro', course.intro),
     modules: (course.modules || []).map((m) => ({
       ...m,
       title: pick(cid, `module:${m.id}:title`, m.title),
