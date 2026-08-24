@@ -1,14 +1,22 @@
 import React from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { Lock, CheckCircle2, Circle, Flame, Zap, LayoutDashboard, ClipboardList, LayoutGrid, Trophy, Award, Brain } from "lucide-react";
-import { isModuleUnlocked, COURSES, PASS_THRESHOLD } from "@/lib/courses";
-import { useProgress } from "@/lib/ProgressContext";
+import { isModuleUnlocked, PASS_THRESHOLD } from "@/lib/courses";
+import { useProgress, isEnrolledIn } from "@/lib/ProgressContext";
+import { useCourses } from "@/lib/CoursesContext";
+import { useAuth } from "@/lib/AuthContext";
 import SettingsPanel from "@/components/tradeiq/SettingsPanel";
+
+// Enough to browse without the sidebar becoming an endless scroll as the
+// catalog grows. The rest are one click away in the catalog.
+const SIDEBAR_COURSE_LIMIT = 10;
 
 export default function Sidebar({ course }) {
   const { topicId: currentId } = useParams();
   const location = useLocation();
   const { progress } = useProgress();
+  const { courses } = useCourses();
+  const { isAuthenticated } = useAuth();
   const courseId = course?.id;
   const courseProg = courseId ? progress?.courses?.[courseId] : null;
   const completed = courseProg?.completed_topics || [];
@@ -17,6 +25,15 @@ export default function Sidebar({ course }) {
   const totalTopics = course ? course.modules.reduce((s, m) => s + m.topics.length, 0) : 0;
   const allDone = completed.length >= totalTopics || courseProg?.unlock_all;
   const certified = courseProg?.certified;
+
+  // Signed out: browse the catalog, capped at SIDEBAR_COURSE_LIMIT.
+  // Signed in: only what the learner actually enrolled in or started.
+  const allCourses = courses || [];
+  const ownCourses = allCourses.filter((c) => isEnrolledIn(progress, c.id));
+  const sidebarCourses = isAuthenticated ? ownCourses : allCourses.slice(0, SIDEBAR_COURSE_LIMIT);
+  const moreCourses = isAuthenticated
+    ? 0
+    : Math.max(0, allCourses.length - sidebarCourses.length);
 
   return (
     <nav className="h-full overflow-y-auto tiq-scroll py-4 px-3">
@@ -217,11 +234,19 @@ export default function Sidebar({ course }) {
           </div>
           </>
           ) : (
-        // When not in a course, show a list of all courses
+        // When not in a course, list courses.
+        //
+        // Signed in, this is the learner's own list — the courses they enrolled
+        // in or have started. Signed out there is no such list, and an empty
+        // sidebar is a dead end for someone who arrived on a shared link, so it
+        // shows the catalog instead: enough to browse, capped so a growing
+        // catalog cannot turn the sidebar into an endless scroll.
         <div>
-          <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Your Courses</p>
+          <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {isAuthenticated ? "Your Courses" : "Courses"}
+          </p>
           <ul className="space-y-0.5">
-            {COURSES.map((c) => {
+            {sidebarCourses.map((c) => {
               const cProg = progress?.courses?.[c.id];
               const done = cProg?.completed_topics?.length || 0;
               const total = c.modules.reduce((s, m) => s + m.topics.length, 0);
@@ -239,6 +264,23 @@ export default function Sidebar({ course }) {
               );
             })}
           </ul>
+
+          {isAuthenticated && sidebarCourses.length === 0 && (
+            <p className="px-2.5 py-2 text-[13px] text-slate-500">
+              You haven't started a course yet.{" "}
+              <Link to="/" className="text-tiq-mint hover:underline">Browse courses</Link>
+            </p>
+          )}
+
+          {moreCourses > 0 && (
+            <Link
+              to="/"
+              className="flex items-center gap-2 px-2.5 py-2 mt-0.5 rounded-md text-[13px] text-tiq-mint hover:bg-tiq-mintLight transition"
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span className="truncate">Browse courses</span>
+            </Link>
+          )}
         </div>
       )}
     </nav>

@@ -40,7 +40,7 @@ const METHOD = [
   },
 ];
 
-export default function GuestIntro({ courseCount = 0 }) {
+export default function GuestIntro() {
   return (
     <div className="mb-12">
       {/* Hero */}
@@ -53,7 +53,7 @@ export default function GuestIntro({ courseCount = 0 }) {
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto mb-2">
           TradeIQ Academy teaches professional subjects using a method backed by
-          neuroscience research on how memory actually forms — not how courses usually look.
+          neuroscience research on how memory actually forms.
         </p>
         <p className="text-sm text-slate-500 max-w-2xl mx-auto">
           Most courses are watched once and forgotten within weeks. This one is built to
@@ -75,7 +75,7 @@ export default function GuestIntro({ courseCount = 0 }) {
           href="#courses"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-tiq-border text-slate-700 font-medium hover:bg-tiq-mintLight transition"
         >
-          Browse {courseCount > 0 ? `${courseCount} courses` : "courses"}
+          Browse courses
           <ArrowRight className="w-4 h-4" />
         </a>
       </div>

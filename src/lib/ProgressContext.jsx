@@ -257,6 +257,26 @@ export function useProgress() {
   return ctx;
 }
 
+// Whether a course belongs on the learner's own list.
+//
+// "Mine" means explicitly enrolled OR already under way. Activity has to count,
+// because learners who started before there was an Enroll button never clicked
+// one — without this their in-progress courses would drop off their own list.
+//
+// Nothing enrols anyone automatically: `enrolled` defaults to false and is only
+// set by the Enroll button. The catalog, the sidebar and My Achievements all
+// call this so the three cannot disagree about what someone is taking.
+export function isEnrolledIn(progress, courseId) {
+  const cp = progress?.courses?.[courseId];
+  if (!cp) return false;
+  return (
+    !!cp.enrolled ||
+    !!cp.certified ||
+    (cp.completed_topics || []).length > 0 ||
+    Object.keys(cp.quiz_scores || {}).length > 0
+  );
+}
+
 export function overallPercent(course, completedTopics) {
   const total = course.modules.reduce((s, m) => s + m.topics.length, 0);
   const done = (completedTopics || []).length;
