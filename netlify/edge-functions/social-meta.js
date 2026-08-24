@@ -60,7 +60,7 @@ async function builtInCourse(origin, courseId) {
 async function uploadedCourse(courseId) {
   try {
     const url =
-      `${SUPABASE_URL}/rest/v1/custom_courses` +
+      `${SUPABASE_URL}/rest/v1/courses` +
       `?course_id=eq.${encodeURIComponent(courseId)}` +
       `&is_published=eq.true&select=title,description,course_data&limit=1`;
     const res = await fetch(url, {
