@@ -17,6 +17,7 @@ import {
   fetchOverrides, replaceQuestion, suppressQuestion, clearOverride,
 } from "@/lib/questionOverrides";
 import QuestionFullEditor from "@/components/admin/QuestionFullEditor";
+import { SearchBox, FilterChips, ResultCount, EmptyState, matchesQuery } from "@/components/admin/AdminUI";
 
 const field =
   "w-full px-3 py-2 text-sm rounded-lg border border-tiq-border bg-white text-tiq-ink focus:outline-none focus:border-tiq-mint";
@@ -130,8 +131,48 @@ export default function AdminCourseEditor() {
   const [openTopic, setOpenTopic] = useState(null);
   const [editingQ, setEditingQ] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [pickQuery, setPickQuery] = useState("");
+  const [query, setQuery] = useState("");
 
   const course = getCourse(courseId);
+
+  // Course picker search.
+  const pickedCourses = (allCourses || []).filter((c) =>
+    matchesQuery(pickQuery, c.title, c.subtitle, c.description, c.id, c.category)
+  );
+
+  // In-course search.
+  //
+  // A course is 4 modules deep and ~120 questions wide, so scrolling to find the
+  // one lesson or the one wrong answer is the slow part of the job. A module is
+  // kept when it matches itself OR contains a matching topic, and its topic list
+  // is narrowed to the matches — searching "murabaha" should show the lessons
+  // that mention it, not every lesson in a module that happens to.
+  const q = query.trim();
+  const topicMatches = (t) =>
+    matchesQuery(
+      query,
+      t.title,
+      t.lesson,
+      t.id,
+      (t.quiz || []).map((x) => `${x.q || ""} ${(x.options || []).join(" ")} ${x.answerText || ""} ${x.explain || ""}`).join(" "),
+    );
+
+  const visibleModules = !q
+    ? (course?.modules || [])
+    : (course?.modules || [])
+        .map((m) => {
+          const selfMatch = matchesQuery(query, m.title, m.subtitle, m.overview, m.id);
+          const topics = (m.topics || []).filter(topicMatches);
+          // A module matching on its own title still shows all its topics —
+          // otherwise searching a module name returns a module with nothing in it.
+          if (selfMatch && topics.length === 0) return { ...m, topics: m.topics || [] };
+          return topics.length ? { ...m, topics } : null;
+        })
+        .filter(Boolean);
+
+  const totalTopics = (course?.modules || []).reduce((n, m) => n + (m.topics || []).length, 0);
+  const shownTopics = visibleModules.reduce((n, m) => n + (m.topics || []).length, 0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,11 +205,29 @@ export default function AdminCourseEditor() {
           <ArrowLeft className="w-4 h-4" /> Back to admin
         </Link>
         <h1 className="font-slab text-2xl text-tiq-ink font-bold mb-1">Course Editor</h1>
-        <p className="text-sm text-slate-500 mb-6">
+        <p className="text-sm text-slate-500 mb-4">
           Pick a course to read and edit its lessons, questions and answers.
         </p>
+
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <SearchBox
+            value={pickQuery}
+            onChange={setPickQuery}
+            placeholder="Search courses by name, category or id…"
+            autoFocus
+          />
+          <ResultCount
+            shown={pickedCourses.length}
+            total={(allCourses || []).length}
+            noun="course"
+          />
+        </div>
+
+        {pickedCourses.length === 0 ? (
+          <EmptyState>No courses match that search.</EmptyState>
+        ) : (
         <ul className="space-y-2">
-          {(allCourses || []).map((c) => {
+          {pickedCourses.map((c) => {
             const modules = (c.modules || []).length;
             const topics = (c.modules || []).reduce((s2, m) => s2 + (m.topics || []).length, 0);
             const questions = (c.modules || []).flatMap((m) => m.topics || []).reduce((s2, t) => s2 + (t.quiz || []).length, 0);
@@ -191,6 +250,7 @@ export default function AdminCourseEditor() {
             );
           })}
         </ul>
+        )}
       </div>
     );
   }
@@ -278,12 +338,28 @@ export default function AdminCourseEditor() {
         </div>
       )}
 
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="Search lessons, questions, answers, explanations…"
+        />
+        <ResultCount shown={shownTopics} total={totalTopics} noun="lesson" />
+      </div>
+
       {loading ? (
         <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
+      ) : visibleModules.length === 0 ? (
+        <EmptyState>Nothing in this course matches that search.</EmptyState>
       ) : (
         <div className="space-y-3">
-          {course.modules.map((mod, mi) => {
-            const modOpen = openModule === mod.id;
+          {visibleModules.map((mod) => {
+            // Index within the whole course, so the M-number stays correct
+            // when the list is filtered by a search.
+            const mi = (course.modules || []).findIndex((m) => m.id === mod.id);
+            // While searching, everything that survived the filter is open — the
+            // point of the search is to see the matches, not to hunt for them.
+            const modOpen = q ? true : openModule === mod.id;
             return (
               <section key={mod.id} className="rounded-xl border border-tiq-border bg-white">
                 <button
@@ -339,7 +415,7 @@ export default function AdminCourseEditor() {
                       <h3 className="text-xs font-semibold text-tiq-ink uppercase tracking-wider mb-2">Lessons</h3>
                       <div className="space-y-2">
                         {mod.topics.map((topic) => {
-                          const tOpen = openTopic === topic.id;
+                          const tOpen = q ? true : openTopic === topic.id;
                           return (
                             <div key={topic.id} className="rounded-lg border border-tiq-border">
                               <button
