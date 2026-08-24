@@ -135,6 +135,13 @@ export function collectPool(progress) {
   return pool;
 }
 
+// Topic ids are unique within a course but not across the catalog, so a topic
+// is identified here by course AND topic. Comparing the bare topic id made two
+// different courses that happen to share an id (e.g. "m1t1") look like one
+// topic, which defeated the interleave in exactly the mixed-course recap this
+// function exists to shuffle.
+const topicKey = (q) => `${q._courseId}::${q._topicId}`;
+
 function interleaveByTopic(items, maxRun = 2) {
   // Greedy re-order so no more than maxRun consecutive items share a topic.
   const remaining = [...items];
@@ -143,7 +150,7 @@ function interleaveByTopic(items, maxRun = 2) {
     let idx = remaining.findIndex((q) => {
       const runStart = out.length - maxRun;
       if (runStart < 0) return true;
-      return !out.slice(runStart).every((o) => o._topicId === q._topicId);
+      return !out.slice(runStart).every((o) => topicKey(o) === topicKey(q));
     });
     if (idx === -1) idx = 0;
     out.push(remaining.splice(idx, 1)[0]);

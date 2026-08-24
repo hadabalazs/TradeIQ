@@ -1,4 +1,5 @@
 import { courseIdExists, adminPublishCourse } from '@/lib/remoteCourses';
+import { COURSES, collectCourseIds } from '@/lib/courses';
 
 export function slugify(text) {
   return (text || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -166,6 +167,52 @@ export function generateFinalAssessment(courseData) {
   return questions.slice(0, targetCount);
 }
 
+// A short, stable prefix derived from the course slug — "uae-banking-
+// fundamentals" becomes "uaebf". Initials rather than the whole slug so ids stay
+// readable in the editor and in exports.
+function idPrefix(slug) {
+  const words = slug.split('-').filter(Boolean);
+  const initials = words.map((w) => w[0]).join('');
+  return (initials.length >= 3 ? initials : slug.replace(/-/g, '')).slice(0, 8);
+}
+
+// Namespace a course's module and topic ids when any of them are already used by
+// another course in the catalog.
+//
+// Topic ids only have to be unique within a course, and every store that holds
+// learner state keys by course id too, so a collision is not corrupting today.
+// It is still worth removing at the point of upload: an unprefixed course
+// ("m1", "m1t1") collides with every other unprefixed course, and each
+// collision is a latent bug for anything that later keys by bare topic id.
+// Renaming here is free — the course has not been published, nothing references
+// its ids yet, and nothing inside course_data points at a topic id (diagrams are
+// keyed by diagram name, dilemmas by module number).
+//
+// Returns the possibly-rewritten course plus the renames, so the upload UI can
+// say what happened rather than silently changing the file the admin supplied.
+export function namespaceCourseIds(courseData, slug, takenIds) {
+  const used = collectCourseIds(courseData);
+  const clashing = [...used].filter((id) => takenIds.has(id));
+  if (clashing.length === 0) return { courseData, renamed: [] };
+
+  const prefix = idPrefix(slug);
+  const renamed = [];
+  const rename = (id) => {
+    if (!id || id.startsWith(`${prefix}_`)) return id;
+    const next = `${prefix}_${id}`;
+    renamed.push({ from: id, to: next });
+    return next;
+  };
+
+  const modules = (courseData.modules || []).map((m) => ({
+    ...m,
+    id: rename(m.id),
+    topics: (m.topics || []).map((t) => ({ ...t, id: rename(t.id) })),
+  }));
+
+  return { courseData: { ...courseData, modules }, renamed };
+}
+
 export async function publishCustomCourse(courseData, source) {
   const slug = slugify(courseData.title);
   if (!slug) throw new Error('Could not generate course ID from title');
@@ -173,6 +220,13 @@ export async function publishCustomCourse(courseData, source) {
   if (await courseIdExists(slug)) {
     throw new Error(`A course with ID "${slug}" already exists. Please use a different title.`);
   }
+
+  // Keep the catalog expandable: ids that already belong to another course are
+  // prefixed with this course's own namespace before anything is written.
+  const taken = new Set();
+  for (const existing of COURSES) for (const id of collectCourseIds(existing)) taken.add(id);
+  const { courseData: namespaced, renamed } = namespaceCourseIds(courseData, slug, taken);
+  courseData = namespaced;
 
   const certificateText = courseData.certificateText || courseData.description || courseData.title;
   const finalAssessment = (courseData.finalAssessment && courseData.finalAssessment.length > 0)
@@ -196,5 +250,5 @@ export async function publishCustomCourse(courseData, source) {
     topics_count: (courseData.modules || []).reduce((s, m) => s + (m.topics || []).length, 0),
   });
 
-  return slug;
+  return { slug, renamed };
 }

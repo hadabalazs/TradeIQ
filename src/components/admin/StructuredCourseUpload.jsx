@@ -178,9 +178,17 @@ export default function StructuredCourseUpload() {
     setPublishing(true);
     setError(null);
     try {
-      await publishCustomCourse(parsedCourse, 'structured_upload');
+      const { renamed } = await publishCustomCourse(parsedCourse, 'structured_upload');
       await reloadCourses();
-      toast({ title: "Course published!", description: `${parsedCourse.title} is now live.` });
+      toast({
+        title: "Course published!",
+        // Say so when ids were namespaced. The upload rewrites ids that another
+        // course already uses, and an admin who later exports the course and
+        // finds different ids than they uploaded deserves to know why.
+        description: renamed?.length
+          ? `${parsedCourse.title} is now live. ${renamed.length} module/topic ${renamed.length === 1 ? "id was" : "ids were"} prefixed to avoid clashing with an existing course.`
+          : `${parsedCourse.title} is now live.`,
+      });
       setParsedCourse(null);
     } catch (err) {
       setError(err.message || "Failed to publish course");

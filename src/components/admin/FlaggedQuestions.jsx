@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { SearchBox, FilterChips, ResultCount, matchesQuery } from "@/components/admin/AdminUI";
 import { Flag, Download, Upload, EyeOff, Eye, Check, RefreshCw, AlertCircle, Pencil, X, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
@@ -179,6 +180,8 @@ export default function FlaggedQuestions() {
   const fileRef = useRef(null);
 
   const [status, setStatus] = useState("open");
+  const [query, setQuery] = useState("");
+  const [courseFilter, setCourseFilter] = useState("all");
   const [flags, setFlags] = useState([]);
   const [overrides, setOverrides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +219,43 @@ export default function FlaggedQuestions() {
     seen.set(key, entry);
     grouped.push(entry);
   }
+
+  // Course chips are built from what is actually flagged, not the whole
+  // catalog — a filter offering twenty courses with nothing flagged in
+  // nineteen of them is noise.
+  const courseOptions = (() => {
+    const counts = new Map();
+    for (const e of grouped) {
+      const title = locate(e.courseId, e.questionId)?.course?.title || e.courseId;
+      const prev = counts.get(e.courseId) || { label: title, count: 0 };
+      counts.set(e.courseId, { label: prev.label, count: prev.count + 1 });
+    }
+    return [
+      { id: "all", label: "All courses", count: grouped.length },
+      ...[...counts.entries()].map(([id, v]) => ({ id, label: v.label, count: v.count })),
+    ];
+  })();
+
+  const visible = grouped.filter((entry) => {
+    if (courseFilter !== "all" && entry.courseId !== courseFilter) return false;
+    if (!query.trim()) return true;
+    const found = locate(entry.courseId, entry.questionId);
+    const snapshot = entry.reports[0]?.question || found?.question;
+    // Search the question text, its options, the reasons learners gave, and the
+    // course/module/topic titles — an admin usually remembers one of those, not
+    // the question id.
+    return matchesQuery(
+      query,
+      snapshot?.q,
+      (snapshot?.options || []).join(" "),
+      snapshot?.explain,
+      entry.reports.map((r) => `${r.reason || ""} ${r.note || ""}`).join(" "),
+      found?.course?.title,
+      found?.module?.title,
+      found?.topic?.title,
+      entry.questionId,
+    );
+  });
 
   const act = async (entry, fn, successMsg) => {
     setBusy(entry.key);
@@ -286,7 +326,9 @@ export default function FlaggedQuestions() {
 
   // ---------- Download ----------
   const download = () => {
-    const items = grouped.map((entry) => {
+    // Exports what is currently on screen. With filters applied the visible set
+    // is the set the admin means, and the button is disabled when it is empty.
+    const items = visible.map((entry) => {
       const found = locate(entry.courseId, entry.questionId);
       const snapshot = entry.reports[0]?.question || found?.question || null;
       return {
@@ -468,7 +510,7 @@ export default function FlaggedQuestions() {
           </button>
           <button
             onClick={download}
-            disabled={grouped.length === 0}
+            disabled={visible.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-tiq-border text-slate-600 hover:bg-tiq-mintLight transition text-xs disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" /> Download
@@ -500,16 +542,33 @@ export default function FlaggedQuestions() {
         ))}
       </div>
 
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="Search question text, options, learner reasons, course or topic…"
+        />
+        <ResultCount shown={visible.length} total={grouped.length} noun="question" />
+      </div>
+
+      <div className="mb-4">
+        <FilterChips options={courseOptions} value={courseFilter} onChange={setCourseFilter} label="Course" />
+      </div>
+
       {loading ? (
         <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
-      ) : grouped.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="text-sm text-slate-500 py-6 text-center">
-          {status === "open" ? "Nothing flagged. " : "Nothing here. "}
-          <span className="text-slate-400">Learners can report a question from any quiz.</span>
+          {grouped.length > 0
+            ? "No flagged questions match those filters."
+            : status === "open" ? "Nothing flagged. " : "Nothing here. "}
+          {grouped.length === 0 && (
+            <span className="text-slate-400">Learners can report a question from any quiz.</span>
+          )}
         </p>
       ) : (
         <ul className="space-y-3">
-          {grouped.map((entry) => {
+          {visible.map((entry) => {
             const found = locate(entry.courseId, entry.questionId);
             const ovr = overrideFor(entry.courseId, entry.questionId);
             const snapshot = entry.reports[0]?.question || found?.question;

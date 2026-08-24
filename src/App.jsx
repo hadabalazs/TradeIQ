@@ -22,6 +22,11 @@ import Achievements from '@/pages/Achievements';
 import KnowledgeCheck from '@/pages/KnowledgeCheck';
 import Admin from '@/pages/Admin';
 import AdminCourseEditor from '@/pages/AdminCourseEditor';
+import AdminCourses from '@/pages/AdminCourses';
+import AdminFlags from '@/pages/AdminFlags';
+import AdminUpload from '@/pages/AdminUpload';
+import AdminData from '@/pages/AdminData';
+import AdminAudit from '@/pages/AdminAudit';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
 
@@ -52,6 +57,11 @@ function App() {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/knowledge-check" element={<KnowledgeCheck />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/courses" element={<AdminCourses />} />
+                <Route path="/admin/flags" element={<AdminFlags />} />
+                <Route path="/admin/upload" element={<AdminUpload />} />
+                <Route path="/admin/data" element={<AdminData />} />
+                <Route path="/admin/audit" element={<AdminAudit />} />
                 <Route path="/admin/editor" element={<AdminCourseEditor />} />
                 <Route path="/admin/course/:courseId" element={<AdminCourseEditor />} />
               </Route>

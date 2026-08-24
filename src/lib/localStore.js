@@ -45,9 +45,34 @@ export function deleteCustomCourse(id) {
   write(COURSES_KEY, all.filter((rec) => rec.id !== id));
 }
 
+// --- Lesson notes ---
+//
+// Notes are keyed "<courseId>::<topicId>". They used to be keyed by the bare
+// topic id, which silently merged the notes of any two courses sharing a topic
+// id — and topic ids are only unique WITHIN a course, so an uploaded course
+// using "m1t1" collided with the built-in IFRS curriculum.
+//
+// Legacy bare-id entries are read but never written to and never migrated. A
+// bare key is genuinely ambiguous — there is no way to know which course its
+// notes belonged to — so moving it to the first course that happens to open
+// that topic would misattribute someone's notes. Reading both means nothing is
+// lost and behaviour for old notes is unchanged, while every new note is
+// written to the scoped key.
+export function lessonNoteKey(courseId, topicId) {
+  return courseId ? `${courseId}::${topicId}` : topicId;
+}
+
+function legacyKeyFor(lessonId) {
+  const sep = lessonId.indexOf('::');
+  return sep === -1 ? null : lessonId.slice(sep + 2);
+}
+
 export function listNotes(lessonId) {
   const all = read(NOTES_KEY, {});
-  return all[lessonId] || [];
+  const legacy = legacyKeyFor(lessonId);
+  const scoped = all[lessonId] || [];
+  if (!legacy || !all[legacy]) return scoped;
+  return [...all[legacy], ...scoped];
 }
 
 export function addNote(lessonId, text) {
@@ -65,5 +90,11 @@ export function addNote(lessonId, text) {
 export function deleteNote(lessonId, noteId) {
   const all = read(NOTES_KEY, {});
   all[lessonId] = (all[lessonId] || []).filter((n) => n.id !== noteId);
+  // The note may live under the legacy bare-id key rather than the scoped one.
+  const legacy = legacyKeyFor(lessonId);
+  if (legacy && all[legacy]) {
+    all[legacy] = all[legacy].filter((n) => n.id !== noteId);
+    if (all[legacy].length === 0) delete all[legacy];
+  }
   write(NOTES_KEY, all);
 }
