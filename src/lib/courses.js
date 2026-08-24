@@ -108,6 +108,12 @@ export const COURSES = [..._builtinCourses];
 
 let _customCourses = [];
 
+// Courses fetched purely to be looked at — someone opened a shared link to a
+// course they have not downloaded. They live in memory only: nothing is written
+// to the device, and a real download or a built-in of the same id takes
+// precedence, because dedupeById keeps the first entry it sees.
+let _viewedCourses = [];
+
 // The single place courses are assembled. Admin question overrides are applied
 // HERE rather than at each surface, so module quizzes, topic quizzes, practice,
 // the daily/mixed review SRS pool, expert questions and the final assessment all
@@ -137,10 +143,19 @@ function rebuildCourses() {
   COURSES.push(
     ...applyCourseOverrides(
       applyOverridesToCourses(
-        applyContentOverrides(dedupeById([..._builtinCourses, ..._customCourses]))
+        applyContentOverrides(dedupeById([..._builtinCourses, ..._customCourses, ..._viewedCourses]))
       )
     )
   );
+}
+
+// Make a fetched-for-viewing course resolvable by getCourse(), so every course
+// screen works from a shared link without the visitor downloading anything.
+export function addViewedCourse(course) {
+  if (!course?.id) return;
+  if (_viewedCourses.some((c) => c.id === course.id)) return;
+  _viewedCourses = [..._viewedCourses, course];
+  rebuildCourses();
 }
 
 // Sync downloaded custom courses (loaded from local storage by CoursesContext)

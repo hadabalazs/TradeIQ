@@ -1,72 +1,104 @@
-import React, { useMemo, useState } from "react";
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, Shield, ArrowRight, Library, FileText, Flag, Plus, HardDrive, ShieldCheck,
+  ArrowLeft, Shield, HardDrive, Download, Upload, FileText, ArrowRight,
+  Maximize2, ShieldCheck,
 } from "lucide-react";
-import { useCourses } from "@/lib/CoursesContext";
-import { findIdCollisions } from "@/lib/courses";
+import { useToast } from "@/components/ui/use-toast";
+import { notifyDataChanged } from "@/lib/sync";
 import AdminGate from "@/components/admin/AdminGate";
-import { SearchBox, ResultCount, EmptyState, matchesQuery } from "@/components/admin/AdminUI";
+import CurriculumExport from "@/components/admin/CurriculumExport";
+import AddCourse from "@/components/admin/AddCourse";
+import CourseManager from "@/components/admin/CourseManager";
+import FlaggedQuestions from "@/components/admin/FlaggedQuestions";
+import CourseTextEditor from "@/components/admin/CourseTextEditor";
+import CourseContentManager from "@/components/admin/CourseContentManager";
 
-// The admin hub.
+// The admin panel: every tool on one page, as it has always been.
 //
-// This page used to stack every admin tool on top of each other. That is fine
-// with two courses and stops being fine well before twenty: no way to find one
-// course, no room for per-section filters, and a page that grows without limit.
-// Each tool now owns a route, and this page routes to them — plus a search that
-// jumps straight to a course, which is the thing an admin does most often.
-
-const SECTIONS = [
-  {
-    to: "/admin/courses",
-    icon: Library,
-    title: "Courses",
-    blurb: "Search the catalog, rename courses, edit certificate wording, delete uploads.",
-  },
-  {
-    to: "/admin/editor",
-    icon: FileText,
-    title: "Course content",
-    blurb: "Edit every module overview, lesson and question, with search inside a course.",
-  },
-  {
-    to: "/admin/flags",
-    icon: Flag,
-    title: "Flagged questions",
-    blurb: "Reports from learners. Filter by course, then suppress or replace.",
-  },
-  {
-    to: "/admin/upload",
-    icon: Plus,
-    title: "Add a course",
-    blurb: "Publish a structured course JSON to the catalog.",
-  },
-  {
-    to: "/admin/data",
-    icon: HardDrive,
-    title: "Data & exports",
-    blurb: "Back up this device's progress, and export curriculum for review.",
-  },
-  {
-    to: "/admin/audit",
-    icon: ShieldCheck,
-    title: "Catalog audit",
-    blurb: "Id collisions and other checks that keep the catalog safe to grow.",
-  },
+// An earlier version replaced this with a hub of links, which made the common
+// case slower — most admin jobs are a quick look or a small edit, and those want
+// everything to hand rather than a navigation step per task. The dedicated
+// full-page views still exist for work that needs room, such as searching a
+// large catalog or filtering flags by course, and each section links to its own.
+const DATA_KEYS = [
+  "tradeiq_profile",
+  "tradeiq_progress",
+  "tradeiq_custom_courses",
+  "tradeiq_lesson_notes",
 ];
 
+function SectionLink({ to, label = "Open full view" }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-tiq-mint/40 bg-white text-tiq-mint text-xs font-medium hover:bg-tiq-mintLight transition shrink-0"
+    >
+      <Maximize2 className="w-3.5 h-3.5" /> {label}
+    </Link>
+  );
+}
+
+// Overlays the section's own card with its full-view link. The sections render
+// their own headings, so the link is positioned rather than passed in — that
+// keeps each component unchanged and usable on its own page too.
+function Section({ to, label, children }) {
+  return (
+    <div className="relative">
+      <div className="absolute right-5 top-5 z-10">
+        <SectionLink to={to} label={label} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function Admin() {
-  const { courses } = useCourses();
-  const [query, setQuery] = useState("");
+  const { toast } = useToast();
+  const fileRef = useRef(null);
 
-  const collisionCount = useMemo(() => findIdCollisions(courses || []).length, [courses]);
+  const exportData = () => {
+    const data = { schema: 1, exported_at: new Date().toISOString() };
+    for (const key of DATA_KEYS) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) data[key] = JSON.parse(raw);
+      } catch { /* skip corrupt keys */ }
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tradeiq-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Backup exported", description: "Keep this file safe — it contains all your progress." });
+  };
 
-  const hits = useMemo(() => {
-    if (!query.trim()) return [];
-    return (courses || [])
-      .filter((c) => matchesQuery(query, c.title, c.subtitle, c.description, c.id, c.category))
-      .slice(0, 8);
-  }, [courses, query]);
+  const importData = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.schema !== 1) throw new Error("Unknown backup format");
+        if (!window.confirm("Importing will overwrite your current progress on this device. Continue?")) return;
+        for (const key of DATA_KEYS) {
+          if (data[key] !== undefined) {
+            localStorage.setItem(key, JSON.stringify(data[key]));
+          }
+        }
+        notifyDataChanged();
+        toast({ title: "Backup imported", description: "Reloading the app..." });
+        setTimeout(() => window.location.reload(), 800);
+      } catch (err) {
+        toast({ variant: "destructive", title: "Import failed", description: err.message || "Invalid backup file" });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   return (
     <AdminGate>
@@ -82,80 +114,107 @@ export default function Admin() {
             <Shield className="w-6 h-6 text-tiq-mint" />
           </div>
           <div>
-            <h1 className="font-slab text-2xl text-tiq-ink font-bold">Admin</h1>
-            <p className="text-sm text-slate-500">
-              {(courses || []).length} course{(courses || []).length === 1 ? "" : "s"} in the catalog
+            <h1 className="font-slab text-2xl text-tiq-ink font-bold">Admin Panel</h1>
+            <p className="text-sm text-slate-500">Manage courses and your local data</p>
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-xl bg-white border border-tiq-border p-5 relative">
+          <div className="absolute right-5 top-5">
+            <SectionLink to="/admin/data" />
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-tiq-mint/10 flex items-center justify-center">
+              <HardDrive className="w-4 h-4 text-tiq-mint" />
+            </div>
+            <h2 className="font-slab text-lg text-tiq-ink font-semibold">Your Data</h2>
+          </div>
+          <p className="text-sm text-slate-500 mb-4">
+            Your progress and notes live on this device (and sync to your account when signed in). Export a backup file as an extra safety net.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={exportData}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-tiq-mint text-white text-sm font-medium hover:bg-tiq-mint/90 transition"
+            >
+              <Download className="w-4 h-4" /> Export backup
+            </button>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-tiq-border text-slate-600 text-sm font-medium hover:bg-tiq-mintLight transition"
+            >
+              <Upload className="w-4 h-4" /> Import backup
+            </button>
+            <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={importData} />
+          </div>
+        </div>
+
+        {/* Course editor — a single obvious button directly under Your Data.
+            Earlier entry points were nested inside other admin sections and were
+            missed; this one stands alone and depends on nothing. */}
+        <Link
+          to="/admin/editor"
+          className="mb-6 flex items-center gap-4 rounded-xl border border-tiq-mint/40 bg-gradient-to-r from-tiq-mint/10 to-tiq-gold/5 p-5 hover:border-tiq-mint transition group"
+        >
+          <div className="w-12 h-12 rounded-lg bg-tiq-mint/15 border border-tiq-mint/30 flex items-center justify-center shrink-0">
+            <FileText className="w-6 h-6 text-tiq-mint" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-slab text-lg text-tiq-ink font-semibold">Course Editor</h2>
+            <p className="text-sm text-slate-600">
+              Read and edit every lesson, question and answer in any course.
             </p>
           </div>
+          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tiq-mint text-white text-sm font-semibold shrink-0 group-hover:gap-2.5 transition-all">
+            Open <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+
+        <div className="mt-6 space-y-6">
+          <Section to="/admin/editor" label="Search courses">
+            <CourseContentManager />
+          </Section>
+
+          <Section to="/admin/courses" label="Search & filter">
+            <CourseTextEditor />
+          </Section>
+
+          <Section to="/admin/flags" label="Search & filter">
+            <FlaggedQuestions />
+          </Section>
+
+          <Section to="/admin/upload">
+            <AddCourse />
+          </Section>
+
+          <Section to="/admin/courses">
+            <CourseManager />
+          </Section>
+
+          <Section to="/admin/data">
+            <CurriculumExport />
+          </Section>
         </div>
 
-        {/* Jump straight to a course — the most common reason to open admin. */}
-        <div className="rounded-xl bg-white border border-tiq-border p-5 mb-6">
-          <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <SearchBox
-              value={query}
-              onChange={setQuery}
-              placeholder="Find a course by name, category or id…"
-            />
-            {query.trim() && <ResultCount shown={hits.length} total={(courses || []).length} noun="course" />}
+        {/* A health check rather than a daily tool, so it sits at the bottom as a
+            link rather than an inline section. */}
+        <Link
+          to="/admin/audit"
+          className="mt-6 flex items-center gap-4 rounded-xl border border-tiq-border bg-white p-5 hover:border-tiq-mint/40 transition group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-tiq-mint/10 border border-tiq-mint/30 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5 text-tiq-mint" />
           </div>
-
-          {query.trim() && (
-            hits.length === 0 ? (
-              <EmptyState>No courses match that search.</EmptyState>
-            ) : (
-              <ul className="mt-3 space-y-1.5">
-                {hits.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      to={`/admin/course/${c.id}`}
-                      className="flex items-center gap-3 rounded-lg border border-tiq-border p-3 hover:border-tiq-mint/40 transition"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-tiq-ink truncate">{c.title}</p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {c.category || "Uncategorised"} · {(c.modules || []).length} modules ·{" "}
-                          <span className="font-mono-tiq">{c.id}</span>
-                        </p>
-                      </div>
-                      <span className="text-xs font-medium text-tiq-mint shrink-0">Edit content →</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )
-          )}
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {SECTIONS.map((s) => {
-            const Icon = s.icon;
-            const badge = s.to === "/admin/audit" && collisionCount > 0 ? collisionCount : null;
-            return (
-              <Link
-                key={s.to}
-                to={s.to}
-                className="flex items-start gap-3 rounded-xl border border-tiq-border bg-white p-5 hover:border-tiq-mint/40 transition group"
-              >
-                <div className="w-10 h-10 rounded-lg bg-tiq-mint/10 border border-tiq-mint/30 flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-tiq-mint" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-slab text-base text-tiq-ink font-semibold">{s.title}</h2>
-                    {badge && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-tiq-gold/15 text-tiq-gold">
-                        {badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{s.blurb}</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-1 group-hover:text-tiq-mint transition" />
-              </Link>
-            );
-          })}
-        </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-slab text-base text-tiq-ink font-semibold">Catalog audit</h2>
+            <p className="text-sm text-slate-600">
+              Three checks that keep the catalog safe to grow: module or topic ids used by
+              more than one course, courses still using unprefixed ids like "m1t1", and
+              whether two different questions have landed on the same review card.
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-tiq-mint transition" />
+        </Link>
       </div>
     </AdminGate>
   );
