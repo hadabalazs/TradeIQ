@@ -16,27 +16,27 @@ import Logo from "@/components/tradeiq/Logo";
 const METHOD = [
   {
     icon: Brain,
-    title: "You recall, not re-read",
+    title: "Answering beats re-reading",
     body:
-      "Re-reading feels like learning but fades fast. Every topic here ends in questions, because the act of retrieving something is what makes it stick — the testing effect.",
+      "Re-reading feels productive and fades fast. Every topic here ends in questions, because pulling an answer out of your head does far more for recall than reading the same page twice. Researchers call it the testing effect.",
   },
   {
     icon: RefreshCw,
-    title: "Timed to the forgetting curve",
+    title: "Timed against forgetting",
     body:
-      "Each question is scheduled individually and comes back just before you'd forget it. Answer confidently and it waits longer; hesitate and it returns sooner.",
+      "Every question gets its own schedule and comes back just before you would lose it. Answer confidently and the gap widens. Hesitate and it returns sooner.",
   },
   {
     icon: Shuffle,
-    title: "Mixed on purpose",
+    title: "Shuffled, not grouped",
     body:
-      "Topics and question formats are interleaved rather than blocked. It feels harder in the moment — and that difficulty is what builds durable memory.",
+      "Topics and question formats are mixed together instead of coming in blocks. Sessions feel harder that way, and harder practice produces memory that lasts.",
   },
   {
     icon: LineChart,
-    title: "Retention you can see",
+    title: "Know where you stand",
     body:
-      "A predicted recall score per module, so you know what's solid and what's slipping — and can drill exactly the weak spots instead of re-reading everything.",
+      "Each module carries a predicted recall score. You can see which parts have held and which are fading, then drill just those instead of going back over everything.",
   },
 ];
 
@@ -49,15 +49,15 @@ export default function GuestIntro() {
           <Logo size={56} />
         </div>
         <h1 className="font-slab text-3xl sm:text-4xl text-tiq-ink font-bold mb-3">
-          Learn it once. Actually remember it.
+          Study it once. Still know it next year.
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto mb-2">
-          TradeIQ Academy teaches professional subjects using a method backed by
-          neuroscience research on how memory actually forms.
+          TradeIQ Academy teaches professional subjects using methods drawn from
+          research on how memory forms.
         </p>
         <p className="text-sm text-slate-500 max-w-2xl mx-auto">
-          Most courses are watched once and forgotten within weeks. This one is built to
-          still be in your head months later.
+          Most courses get watched once and fade within weeks. This one keeps bringing the
+          material back until it sticks.
         </p>
       </div>
 
@@ -88,11 +88,11 @@ export default function GuestIntro() {
             The method
           </span>
           <h2 className="font-slab text-xl sm:text-2xl text-tiq-ink font-bold mb-2">
-            Built on how memory works
+            Where the method comes from
           </h2>
           <p className="text-sm text-slate-600 max-w-xl mx-auto">
-            Four findings from decades of memory research, wired into the way every lesson
-            and review session behaves.
+            Four findings from memory research, and how each one shapes the way lessons and
+            reviews work here.
           </p>
         </div>
 
@@ -118,8 +118,8 @@ export default function GuestIntro() {
             <Award className="w-5 h-5 text-tiq-mint" />
           </div>
           <p className="text-sm text-slate-600 text-left">
-            <span className="font-semibold text-tiq-ink">Start learning right now</span> — no
-            account needed. Create one free to sync your progress across devices and earn a
+            <span className="font-semibold text-tiq-ink">You can start right now</span> without
+            an account. Create one free to sync progress across your devices and earn a
             verifiable certificate when you finish a course.
           </p>
         </div>

@@ -40,9 +40,9 @@ export default function EnrollCourse({ course }) {
       </div>
       <div className="p-6">
         <p className="text-sm text-slate-500 mb-5">
-          Enrol to add this course to <span className="font-medium text-tiq-ink">My Courses</span> and
-          start tracking your progress. Everything stays unlocked in order — finish a
-          module, or pass its quiz, to move on.
+          Enrolling adds the course to <span className="font-medium text-tiq-ink">My Courses</span> and
+          starts tracking your progress. Modules open in order: finish one, or pass its
+          quiz, to reach the next.
         </p>
         {isAuthenticated ? (
           <button

@@ -143,7 +143,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-slate-600">
-            Review random questions from what you've already learned and keep your streak going.
+            Questions drawn from what you've already covered, to keep your streak going.
           </p>
         </Link>
         <Link
@@ -160,7 +160,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-slate-600">
-            Test your knowledge with quiz-only mode. Review missed answers at the end.
+            Quiz-only mode, no lessons. You can review whatever you missed at the end.
           </p>
         </Link>
       </div>

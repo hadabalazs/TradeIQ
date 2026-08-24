@@ -230,7 +230,7 @@ export default function CourseCatalog() {
             <h2 className="font-slab text-xl text-tiq-ink font-bold">More Courses</h2>
           </div>
           <p className="text-sm text-slate-500 mb-5">
-            Download the courses that interest you — once downloaded, they work fully offline.
+            Download the courses that interest you. Once downloaded, they work fully offline.
           </p>
           <div className="grid sm:grid-cols-2 gap-5">
             {availableCourses.map((c) => {
