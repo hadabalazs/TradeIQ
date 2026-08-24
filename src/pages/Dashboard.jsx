@@ -6,6 +6,7 @@ import { getCourse } from "@/lib/courses";
 import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
 import ModuleCard from "@/components/tradeiq/ModuleCard";
 import EnrollCourse from "@/components/tradeiq/EnrollCourse";
+import CourseIntro from "@/components/tradeiq/CourseIntro";
 import DilemmaCard from "@/components/tradeiq/DilemmaCard";
 import DilemmaModal from "@/components/tradeiq/DilemmaModal";
 import Certificate from "@/components/tradeiq/Certificate";
@@ -60,10 +61,19 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Per-course proficiency selector */}
+      {/* What the course is. Shown to everyone: a visitor arriving from a shared
+          link needs it to decide, and a returning learner uses it to remember
+          where a module sits in the whole. Collapsed to the summary line for
+          learners already under way, who do not need the module list repeated
+          directly above the module cards. */}
+      <CourseIntro course={course} compact={hasActivity} />
+
       {needsEnroll && <EnrollCourse course={course} />}
 
-      {/* Stats row */}
+      {/* Stats row — every figure here is about the learner's own progress, so
+          six zeroes is the whole story for someone who just arrived from a
+          shared link. Held back until there is progress to describe. */}
+      {!needsEnroll && (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         <StatCard icon={TrendingUp} label="Course Progress" value={`${pct}%`} />
         <StatCard icon={Brain} label="Mastered" value={`${mastery.pct}%`} sub={mastery.fading > 0 ? `${mastery.fading} fading` : null} />
@@ -72,8 +82,11 @@ export default function Dashboard() {
         <StatCard icon={Award} label="Level" value={level} />
         <StatCard icon={Trophy} label="Topics Done" value={`${completed.length}/${totalTopics}`} />
       </div>
+      )}
 
-      {/* Quick actions */}
+      {/* Quick actions — both review what you have already learned, so neither
+          does anything until there is something to review. */}
+      {!needsEnroll && (
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
         <Link
           to="/daily"
@@ -112,6 +125,7 @@ export default function Dashboard() {
           </p>
         </Link>
       </div>
+      )}
 
       {/* Final assessment banner */}
       {allDone && (

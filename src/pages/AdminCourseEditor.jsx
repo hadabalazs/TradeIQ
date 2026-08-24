@@ -347,6 +347,25 @@ export default function AdminCourseEditor() {
         <ResultCount shown={shownTopics} total={totalTopics} noun="lesson" />
       </div>
 
+      {/* Course-level text. Sits above the modules because it is what a visitor
+          arriving from a shared link reads first. */}
+      {!loading && !q && (
+        <div className="rounded-xl border border-tiq-border bg-white p-4 mb-3">
+          <TextField
+            label="Course intro"
+            hint="Two or three sentences on what the course covers. Shown at the top of the course page, which is the first thing someone sees when the link is shared."
+            multiline
+            rows={4}
+            value={content["course:intro"] ?? ""}
+            shipped={course.intro || course.description}
+            edited={content["course:intro"] !== undefined}
+            busy={busy || !installed}
+            onSave={(v) => saveText("course:intro", v)}
+            onRevert={() => revertText("course:intro")}
+          />
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
       ) : visibleModules.length === 0 ? (
