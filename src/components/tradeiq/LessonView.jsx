@@ -4,6 +4,7 @@ import { BookOpen, ArrowRight } from "lucide-react";
 import LessonDiagram from "@/components/tradeiq/LessonDiagram";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CommunityNotes from "@/components/tradeiq/CommunityNotes";
+import { lessonNoteKey } from "@/lib/localStore";
 import { Brain, Check } from "lucide-react";
 import { addNote } from "@/lib/localStore";
 
@@ -92,7 +93,7 @@ export default function LessonView({ topic, onStartQuiz, quizScore, course }) {
         </TabsContent>
 
         <TabsContent value="notes">
-          <CommunityNotes lessonId={topic.id} />
+          <CommunityNotes lessonId={lessonNoteKey(course?.id, topic.id)} />
         </TabsContent>
       </Tabs>
     </div>

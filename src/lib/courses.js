@@ -167,6 +167,56 @@ export function applyCourseTextOverrides(rows) {
   rebuildCourses();
 }
 
+// --- Catalog ID hygiene ---
+//
+// Topic and module ids are only required to be unique WITHIN a course, and
+// everything that stores per-learner state keys by course id as well, so a
+// collision across courses is not itself corrupting. It is still worth
+// surfacing: a course whose ids are unprefixed ("m1", "m1t1") will collide with
+// every other unprefixed course, and each collision is a place where any future
+// feature that keys by bare topic id becomes a data bug. Prefixing ids per
+// course (e.g. "uaeb_m1t1") keeps the catalog expandable without that risk.
+//
+// Returns [{ id, kind, courses: [courseId, ...] }] for ids used by more than one
+// course. Used by the admin catalog audit.
+export function findIdCollisions(courses = COURSES) {
+  const topics = new Map();
+  const modules = new Map();
+
+  for (const course of courses) {
+    for (const m of course.modules || []) {
+      if (m.id) {
+        if (!modules.has(m.id)) modules.set(m.id, new Set());
+        modules.get(m.id).add(course.id);
+      }
+      for (const t of m.topics || []) {
+        if (!t.id) continue;
+        if (!topics.has(t.id)) topics.set(t.id, new Set());
+        topics.get(t.id).add(course.id);
+      }
+    }
+  }
+
+  const out = [];
+  for (const [kind, map] of [["module", modules], ["topic", topics]]) {
+    for (const [id, courseIds] of map) {
+      if (courseIds.size > 1) out.push({ id, kind, courses: [...courseIds] });
+    }
+  }
+  return out.sort((a, b) => b.courses.length - a.courses.length || a.id.localeCompare(b.id));
+}
+
+// Every topic and module id a course uses, for checking an upload against the
+// catalog before it is published.
+export function collectCourseIds(course) {
+  const ids = new Set();
+  for (const m of course?.modules || []) {
+    if (m.id) ids.add(m.id);
+    for (const t of m.topics || []) if (t.id) ids.add(t.id);
+  }
+  return ids;
+}
+
 export function getCourse(courseId) {
   return COURSES.find((c) => c.id === courseId) || null;
 }
