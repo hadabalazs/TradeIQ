@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Trophy, Lock, ArrowRight, Sparkles, Award, TrendingUp, Flame, Zap, Theater, ChevronDown, Brain } from "lucide-react";
 import { courseMastery, retentionScore } from "@/lib/srs";
 import { getCourse } from "@/lib/courses";
-import { useProgress, overallPercent, levelFromXp } from "@/lib/ProgressContext";
+import { useProgress, overallPercent, levelFromXp, completedInCourse } from "@/lib/ProgressContext";
 import { useAuth } from "@/lib/AuthContext";
 import { usePageTitle } from "@/lib/usePageTitle";
 import ModuleCard from "@/components/tradeiq/ModuleCard";
@@ -39,7 +39,9 @@ export default function Dashboard() {
   }
 
   const courseProg = progress?.courses?.[course.id] || {};
-  const completed = courseProg.completed_topics || [];
+  // Filtered to topics the course still has, so a stale id cannot inflate
+  // progress or unlock the final assessment.
+  const completed = completedInCourse(course, courseProg.completed_topics);
   const totalTopics = course.modules.reduce((s, m) => s + m.topics.length, 0);
   const pct = overallPercent(course, completed);
   const { level } = levelFromXp(progress?.total_xp || 0);

@@ -9,6 +9,7 @@ import Certificate from "@/components/tradeiq/Certificate";
 import FlagQuestion from "@/components/tradeiq/FlagQuestion";
 import { FillInBlankQuestion, SortingQuestion } from "@/components/tradeiq/QuestionTypes";
 import TermMatchQuestion from "@/components/tradeiq/TermMatchQuestion";
+import { completedInCourse } from "@/lib/ProgressContext";
 
 export default function FinalAssessmentView() {
   const { courseId } = useParams();
@@ -45,7 +46,9 @@ export default function FinalAssessmentView() {
 
   const courseProg = progress?.courses?.[course.id] || {};
   const totalTopics = course.modules.reduce((s, m) => s + m.topics.length, 0);
-  const allCompleted = (courseProg.completed_topics || []).length >= totalTopics || courseProg.unlock_all;
+  // Counted against the course, so a stale topic id cannot unlock certification.
+  const allCompleted =
+    completedInCourse(course, courseProg.completed_topics).length >= totalTopics || courseProg.unlock_all;
   const question = shuffledAssessment[current];
   const isLast = current === shuffledAssessment.length - 1;
 
