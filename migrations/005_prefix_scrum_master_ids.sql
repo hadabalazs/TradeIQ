@@ -10,7 +10,11 @@
 -- Safe to run more than once: every rewrite skips values that already carry the
 -- prefix.
 --
--- Run the two statements together, in this order.
+-- Paste the whole file into the Supabase SQL editor and run it once. It is
+-- wrapped in a transaction, so it either all applies or none of it does. The
+-- select at the end reports the result.
+
+begin;
 
 -- 1. Rename the ids inside the course itself.
 with renamed as (
@@ -111,3 +115,21 @@ from lateral (
        ) as new_cp
 ) v
 where up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master}' is not null;
+
+commit;
+
+-- Verification. Expect bare_ids = 0 and the five taasm_ module ids.
+select
+  (select count(*)
+     from courses c, jsonb_array_elements(c.course_data::jsonb->'modules') m
+    where c.course_id = 'the-ai-augmented-scrum-master'
+      and m->>'id' not like 'taasm\_%') as bare_module_ids,
+  (select count(*)
+     from courses c,
+          jsonb_array_elements(c.course_data::jsonb->'modules') m,
+          jsonb_array_elements(m->'topics') t
+    where c.course_id = 'the-ai-augmented-scrum-master'
+      and t->>'id' not like 'taasm\_%') as bare_topic_ids,
+  (select jsonb_agg(m->>'id')
+     from courses c, jsonb_array_elements(c.course_data::jsonb->'modules') m
+    where c.course_id = 'the-ai-augmented-scrum-master') as module_ids;
