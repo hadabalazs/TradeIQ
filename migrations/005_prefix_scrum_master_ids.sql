@@ -64,56 +64,55 @@ where c.id = r.row_id;
 --
 -- completed_topics and quiz_completed_topics hold topic ids. quiz_scores and
 -- passed_first_time hold topic ids AND module-quiz ids of the form
--- "module_<moduleId>", so those keep the "module_" prefix and gain the namespace
--- after it.
+-- "module_<moduleId>", so those keep "module_" and gain the namespace after it.
+--
+-- Written as correlated subqueries inside SET rather than UPDATE ... FROM
+-- LATERAL: a LATERAL item cannot reference the table being updated, which is
+-- what "invalid reference to FROM-clause entry" means. A subquery in SET can.
 update user_progress up
 set progress = jsonb_set(
-      up.progress::jsonb,
-      '{courses,the-ai-augmented-scrum-master}',
-      v.new_cp
-    )
-from lateral (
-  select
-    (up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master}')
-    || jsonb_build_object(
-         'completed_topics', (
-           select coalesce(jsonb_agg(
-             case when e like 'taasm\_%' then e else 'taasm_' || e end), '[]'::jsonb)
-           from jsonb_array_elements_text(coalesce(
-             up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,completed_topics}',
-             '[]'::jsonb)) e
-         ),
-         'quiz_completed_topics', (
-           select coalesce(jsonb_agg(
-             case when e like 'taasm\_%' then e else 'taasm_' || e end), '[]'::jsonb)
-           from jsonb_array_elements_text(coalesce(
-             up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,quiz_completed_topics}',
-             '[]'::jsonb)) e
-         ),
-         'passed_first_time', (
-           select coalesce(jsonb_agg(
-             case
-               when e like 'module\_taasm\_%' or e like 'taasm\_%' then e
-               when e like 'module\_%' then 'module_taasm_' || substring(e from 8)
-               else 'taasm_' || e
-             end), '[]'::jsonb)
-           from jsonb_array_elements_text(coalesce(
-             up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,passed_first_time}',
-             '[]'::jsonb)) e
-         ),
-         'quiz_scores', (
-           select coalesce(jsonb_object_agg(
-             case
-               when kv.key like 'module\_taasm\_%' or kv.key like 'taasm\_%' then kv.key
-               when kv.key like 'module\_%' then 'module_taasm_' || substring(kv.key from 8)
-               else 'taasm_' || kv.key
-             end, kv.value), '{}'::jsonb)
-           from jsonb_each(coalesce(
-             up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,quiz_scores}',
-             '{}'::jsonb)) kv
-         )
-       ) as new_cp
-) v
+  up.progress::jsonb,
+  '{courses,the-ai-augmented-scrum-master}',
+  (up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master}')
+  || jsonb_build_object(
+       'completed_topics', (
+         select coalesce(jsonb_agg(
+           case when e like 'taasm\_%' then e else 'taasm_' || e end), '[]'::jsonb)
+         from jsonb_array_elements_text(coalesce(
+           up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,completed_topics}',
+           '[]'::jsonb)) as e
+       ),
+       'quiz_completed_topics', (
+         select coalesce(jsonb_agg(
+           case when e like 'taasm\_%' then e else 'taasm_' || e end), '[]'::jsonb)
+         from jsonb_array_elements_text(coalesce(
+           up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,quiz_completed_topics}',
+           '[]'::jsonb)) as e
+       ),
+       'passed_first_time', (
+         select coalesce(jsonb_agg(
+           case
+             when e like 'module\_taasm\_%' or e like 'taasm\_%' then e
+             when e like 'module\_%' then 'module_taasm_' || substring(e from 8)
+             else 'taasm_' || e
+           end), '[]'::jsonb)
+         from jsonb_array_elements_text(coalesce(
+           up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,passed_first_time}',
+           '[]'::jsonb)) as e
+       ),
+       'quiz_scores', (
+         select coalesce(jsonb_object_agg(
+           case
+             when kv.key like 'module\_taasm\_%' or kv.key like 'taasm\_%' then kv.key
+             when kv.key like 'module\_%' then 'module_taasm_' || substring(kv.key from 8)
+             else 'taasm_' || kv.key
+           end, kv.value), '{}'::jsonb)
+         from jsonb_each(coalesce(
+           up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master,quiz_scores}',
+           '{}'::jsonb)) as kv
+       )
+     )
+)
 where up.progress::jsonb #> '{courses,the-ai-augmented-scrum-master}' is not null;
 
 commit;
