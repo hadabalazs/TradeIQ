@@ -6,6 +6,8 @@ import GlossaryPanel from "@/components/tradeiq/GlossaryPanel";
 import { useProgress } from "@/lib/ProgressContext";
 import { getCourse } from "@/lib/courses";
 import { useCourses } from "@/lib/CoursesContext";
+import { useAuth } from "@/lib/AuthContext";
+import { trackPageView } from "@/lib/analytics";
 
 export default function AppShell() {
   const { progress, loading } = useProgress();
@@ -14,6 +16,7 @@ export default function AppShell() {
   const location = useLocation();
 
   const { ensureCourse, resolvingCourse } = useCourses();
+  const { isAuthenticated } = useAuth();
 
   // Determine the active course from the URL
   const courseMatch = location.pathname.match(/\/course\/([^/]+)/);
@@ -26,6 +29,12 @@ export default function AppShell() {
   useEffect(() => {
     if (courseId && !course) ensureCourse(courseId);
   }, [courseId, course, ensureCourse]);
+
+  // Every in-app screen renders through this layout, so one call here covers
+  // them all. Anonymous, and silent on failure — see src/lib/analytics.js.
+  useEffect(() => {
+    trackPageView(location.pathname, { isAuthenticated });
+  }, [location.pathname, isAuthenticated]);
 
   if (loading) {
     return (

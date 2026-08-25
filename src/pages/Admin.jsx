@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, Shield, HardDrive, Download, Upload, FileText, ArrowRight,
-  Maximize2, ShieldCheck,
+  Maximize2, ShieldCheck, BarChart3,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { notifyDataChanged } from "@/lib/sync";
@@ -195,6 +195,23 @@ export default function Admin() {
             <CurriculumExport />
           </Section>
         </div>
+
+        <Link
+          to="/admin/analytics"
+          className="mt-6 flex items-center gap-4 rounded-xl border border-tiq-border bg-white p-5 hover:border-tiq-mint/40 transition group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-tiq-mint/10 border border-tiq-mint/30 flex items-center justify-center shrink-0">
+            <BarChart3 className="w-5 h-5 text-tiq-mint" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-slab text-base text-tiq-ink font-semibold">Traffic</h2>
+            <p className="text-sm text-slate-600">
+              Which courses and pages are being opened, and where the traffic came from.
+              Anonymous, recorded in your own database — no third-party analytics.
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-tiq-mint transition" />
+        </Link>
 
         {/* A health check rather than a daily tool, so it sits at the bottom as a
             link rather than an inline section. */}
