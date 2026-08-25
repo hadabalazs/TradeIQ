@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { Lock, CheckCircle2, Circle, Flame, Zap, LayoutDashboard, ClipboardList, LayoutGrid, Trophy, Award, Brain } from "lucide-react";
 import { isModuleUnlocked, PASS_THRESHOLD } from "@/lib/courses";
-import { useProgress, isEnrolledIn } from "@/lib/ProgressContext";
+import { useProgress, isEnrolledIn, completedInCourse } from "@/lib/ProgressContext";
 import { useCourses } from "@/lib/CoursesContext";
 import { useAuth } from "@/lib/AuthContext";
 import SettingsPanel from "@/components/tradeiq/SettingsPanel";
@@ -19,7 +19,7 @@ export default function Sidebar({ course }) {
   const { isAuthenticated } = useAuth();
   const courseId = course?.id;
   const courseProg = courseId ? progress?.courses?.[courseId] : null;
-  const completed = courseProg?.completed_topics || [];
+  const completed = completedInCourse(course, courseProg?.completed_topics);
   const viaQuiz = courseProg?.quiz_completed_topics || [];
   const scores = courseProg?.quiz_scores || {};
   const totalTopics = course ? course.modules.reduce((s, m) => s + m.topics.length, 0) : 0;

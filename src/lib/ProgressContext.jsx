@@ -277,9 +277,23 @@ export function isEnrolledIn(progress, courseId) {
   );
 }
 
+// Completed topics that the course still actually contains.
+//
+// Stored progress is a list of topic ids, and an id can stop matching: a course
+// is edited, or its ids are renamed to remove a collision. Counting the raw list
+// then overstates progress — and because "all topics done" unlocks the final
+// assessment, a stale id could hand someone a certificate they had not earned.
+// Counting against the course itself makes stale entries inert instead.
+export function completedInCourse(course, completedTopics) {
+  if (!course) return [];
+  const real = new Set();
+  for (const m of course.modules || []) for (const t of m.topics || []) real.add(t.id);
+  return [...new Set(completedTopics || [])].filter((id) => real.has(id));
+}
+
 export function overallPercent(course, completedTopics) {
   const total = course.modules.reduce((s, m) => s + m.topics.length, 0);
-  const done = (completedTopics || []).length;
+  const done = completedInCourse(course, completedTopics).length;
   return total ? Math.round((done / total) * 100) : 0;
 }
 
