@@ -95,7 +95,6 @@ export default function FinalAssessmentView() {
           courseId: course.id,
           courseTitle: course.certificateTitle || course.title,
           learnerName: progress?.user_name || user.email?.split("@")[0] || "Learner",
-          score: pct,
         }).catch(() => { /* offline or not yet migrated — cert stays unissued */ });
       }
 

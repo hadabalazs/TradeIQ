@@ -1,66 +1,74 @@
 // Certificate issuance and verification.
 //
-// SECURITY: /verify/:certId used to render "Certificate Verified" for any string
-// it was given — it performed no lookup whatsoever, so a credential could be
-// fabricated by inventing an id. Verification now resolves the id against the
-// certificates table and reports honestly when nothing is found.
+// SECURITY — two problems this file used to have, both fixed in migration 007.
 //
-// Ids were also derived from a 32-bit hash of name + score + date, which is
-// guessable and collision-prone. Issued ids are random tokens, so they cannot be
-// derived from a learner's details or enumerated.
+// 1. /verify/:certId rendered "Certificate Verified" for any string, because it
+//    performed no lookup. A credential could be fabricated by inventing an id.
+//
+// 2. Issuance was a plain table write guarded only by `auth.uid() = user_id`,
+//    with the client supplying the course, the score and the id. Any free
+//    account could therefore write itself a 100% pass for any course without
+//    opening a lesson, and verification would then confirm it.
+//
+// Both paths now go through security-definer functions. `verify_certificate`
+// returns at most one row, matched by exact id — there is no query shape that
+// asks it for every certificate. `issue_certificate` reads the caller's own
+// stored progress to decide whether a certificate is owed and what score it
+// carries; nothing about the outcome comes from the request.
 
 import { supabase } from '@/lib/supabaseClient';
+import { pushToCloud } from '@/lib/sync';
 
-export function newCertificateId() {
-  const raw =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID().replace(/-/g, '')
-      : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-  return `TIQ-${raw.slice(0, 16).toUpperCase()}`;
-}
-
-// True once we know the table exists. Until the migration is run, issuance is a
-// no-op and verification reports "cannot verify" rather than claiming validity.
+// True once we know the certificate functions exist. Until migration 007 is
+// run, issuance is a no-op and verification reports "cannot verify" rather than
+// claiming validity.
+//
+// Only a positive result is cached. Caching a failure would mean a single
+// offline check disabled certificates for the rest of the session, long after
+// the connection came back.
 let _available = null;
 
 export async function certificatesAvailable() {
-  if (_available !== null) return _available;
-  const { error } = await supabase.from('certificates').select('cert_id').limit(1);
-  _available = !error;
-  return _available;
+  if (_available === true) return true;
+  const { error } = await supabase.rpc('verify_certificate', { p_cert_id: '__probe__' });
+  if (error) return false;
+  _available = true;
+  return true;
 }
 
 // Issue (or refresh) the signed-in learner's certificate for a course. Returns
-// the certificate id, or null when it can't be issued — guest, offline, or the
-// migration not yet run. Callers must treat null as "no verifiable certificate"
-// rather than falling back to a made-up id.
-export async function issueCertificate({ userId, courseId, courseTitle, learnerName, score }) {
+// the certificate id, or null when it cannot be issued — guest, offline, the
+// migration not yet run, or the course genuinely not earned. Callers must treat
+// null as "no verifiable certificate" rather than falling back to a made-up id.
+//
+// No score argument: the server takes it from stored progress. Passing one
+// would be the vulnerability this replaced.
+export async function issueCertificate({ userId, courseId, courseTitle, learnerName }) {
   if (!userId || !courseId) return null;
-  if (!(await certificatesAvailable())) return null;
 
-  // Re-passing a course keeps the original id so previously shared links stay
-  // valid; only the score and issue date move.
-  const existing = await getCertificateForCourse(userId, courseId);
-  const certId = existing?.cert_id || newCertificateId();
+  // The server decides from the CLOUD copy of progress, which the local device
+  // may be ahead of — certification is written locally and pushed on a debounce,
+  // so issuing immediately after passing could otherwise be refused for a
+  // learner who genuinely earned it. Flushing first removes that race.
+  try {
+    await pushToCloud();
+  } catch {
+    // Offline. The RPC below will fail too, and returns null.
+  }
 
-  const { error } = await supabase.from('certificates').upsert(
-    {
-      cert_id: certId,
-      user_id: userId,
-      course_id: courseId,
-      course_title: courseTitle || courseId,
-      learner_name: learnerName || 'Learner',
-      score: Math.max(0, Math.min(100, Math.round(score || 0))),
-      issued_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,course_id' }
-  );
+  const { data, error } = await supabase.rpc('issue_certificate', {
+    p_course_id: courseId,
+    p_course_title: courseTitle || courseId,
+    p_learner_name: learnerName || 'Learner',
+  });
   if (error) return null;
-  return certId;
+  _available = true;
+  return data || null;
 }
 
 export async function getCertificateForCourse(userId, courseId) {
   if (!userId || !courseId) return null;
+  // Readable under the "read own" policy — scoped to the caller's own rows.
   const { data, error } = await supabase
     .from('certificates')
     .select('*')
@@ -75,12 +83,10 @@ export async function getCertificateForCourse(userId, courseId) {
 // present "unknown" as "valid".
 export async function verifyCertificate(certId) {
   if (!certId) return { status: 'invalid' };
-  const { data, error } = await supabase
-    .from('certificates')
-    .select('cert_id, course_title, learner_name, score, issued_at')
-    .eq('cert_id', certId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('verify_certificate', { p_cert_id: certId });
   if (error) return { status: 'unavailable' };
-  if (!data) return { status: 'invalid' };
-  return { status: 'valid', certificate: data };
+  // A set-returning function comes back as an array; empty means no such id.
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return { status: 'invalid' };
+  return { status: 'valid', certificate: row };
 }

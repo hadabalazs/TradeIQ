@@ -82,23 +82,32 @@ function normalisePath(pathname) {
   return p.slice(0, 512);
 }
 
-// Views already recorded this session, so React re-renders and StrictMode's
+// Screens already recorded this session, so React re-renders and StrictMode's
 // double-invoked effects cannot count the same screen twice.
+//
+// Keyed by path alone. Including the signed-in flag meant the first screen was
+// recorded twice for every logged-in visitor: once before the session resolved
+// and again when it flipped false to true.
 const seen = new Set();
 
-// Set once a write fails, which in practice means the migration has not been
-// run or the insert policy was revoked. Without this every navigation would
-// fire another doomed request and log another console error; the site works
-// either way, but one failed request is enough to learn from.
+// Stop trying after the server tells us this will never work — the migration
+// has not been run, or the insert policy was revoked. Without it every
+// navigation fires another doomed request and logs another console error.
 let disabled = false;
+
+// A network failure is different: offline, a dropped connection, a blocked
+// request. Those come back, so they are counted rather than fatal, and tracking
+// resumes on the next navigation. Giving up permanently on the first blip would
+// silently lose the rest of the visit.
+let networkFailures = 0;
+const MAX_NETWORK_FAILURES = 3;
 
 export function trackPageView(pathname, { isAuthenticated = false, force = false } = {}) {
   if (disabled || optedOut()) return;
 
   const path = normalisePath(pathname);
-  const key = `${path}|${isAuthenticated}`;
-  if (!force && seen.has(key)) return;
-  seen.add(key);
+  if (!force && seen.has(path)) return;
+  seen.add(path);
 
   const courseMatch = path.match(COURSE_RE);
 
@@ -114,8 +123,18 @@ export function trackPageView(pathname, { isAuthenticated = false, force = false
       session_id: sessionId(),
     })
     .then(
-      ({ error }) => { if (error) disabled = true; },
-      () => { disabled = true; },
+      ({ error }) => {
+        // An error object here came from the API: the table or policy is
+        // missing, and retrying cannot help.
+        if (error) disabled = true;
+        else networkFailures = 0;
+      },
+      () => {
+        // A rejected promise is a transport failure. Retry next navigation, but
+        // do not keep firing forever if the connection is simply gone.
+        networkFailures += 1;
+        if (networkFailures >= MAX_NETWORK_FAILURES) disabled = true;
+      },
     );
 }
 

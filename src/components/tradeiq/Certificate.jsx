@@ -7,6 +7,7 @@ import { getCertificateForCourse, issueCertificate } from "@/lib/certificates";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import CertificateArtwork, { VARIANT_SIZE } from "@/components/tradeiq/CertificateArtwork";
+import { qrDataUri } from "@/lib/qrcode";
 
 export default function Certificate({ course, name, score, date, preview = false }) {
   const { isAuthenticated, user } = useAuth();
@@ -63,7 +64,6 @@ export default function Certificate({ course, name, score, date, preview = false
         courseId: course.id,
         courseTitle: course.certificateTitle || course.title,
         learnerName: name || user.email?.split("@")[0] || "Learner",
-        score,
       });
       if (alive && certId) setIssued({ cert_id: certId });
     })().catch(() => { /* offline or table absent — falls back below */ });
@@ -72,9 +72,11 @@ export default function Certificate({ course, name, score, date, preview = false
 
   const certId = issued?.cert_id || null;
   const verifyUrl = certId ? `${window.location.origin}/verify/${certId}` : null;
-  const qrUrl = verifyUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=72x72&margin=0&bgcolor=F5EDD8&color=1A2B1E&data=${encodeURIComponent(verifyUrl)}`
-    : null;
+  // Generated locally rather than fetched from api.qrserver.com. Sending each
+  // certificate id to a third party to have it drawn is a disclosure a
+  // credential should not make, and it left PDF export dependent on that
+  // service being up.
+  const qrUrl = verifyUrl ? qrDataUri(verifyUrl) : null;
 
   // Three formats from one design.
   //   classic   the wide certificate, as before
