@@ -46,18 +46,46 @@ function clamp(text, max = 200) {
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
 }
 
+// Every crawler hit re-fetched the manifest and, for uploaded courses, hit
+// Supabase again. Course metadata changes when an admin edits it, not per
+// request, so a short cache removes almost all of that work while keeping edits
+// visible within a minute. The cache lives per edge instance and is dropped on
+// redeploy, so it cannot serve stale data for long.
+const TTL_MS = 60_000;
+const cache = new Map();
+
+function cached(key) {
+  const hit = cache.get(key);
+  if (!hit || Date.now() > hit.expires) return undefined;
+  return hit.value;
+}
+
+function remember(key, value) {
+  // Bound the map so a flood of unknown course ids cannot grow it without limit.
+  if (cache.size > 200) cache.clear();
+  cache.set(key, { value, expires: Date.now() + TTL_MS });
+  return value;
+}
+
 async function builtInCourse(origin, courseId) {
+  const key = `builtin:${courseId}`;
+  const hit = cached(key);
+  if (hit !== undefined) return hit;
   try {
     const res = await fetch(`${origin}/course-meta.json`);
     if (!res.ok) return null;
     const all = await res.json();
-    return all[courseId] || null;
+    return remember(key, all[courseId] || null);
   } catch {
+    // Not cached: a transient failure should not be remembered as "no course".
     return null;
   }
 }
 
 async function uploadedCourse(courseId) {
+  const key = `uploaded:${courseId}`;
+  const hit = cached(key);
+  if (hit !== undefined) return hit;
   try {
     const url =
       `${SUPABASE_URL}/rest/v1/courses` +
@@ -69,11 +97,11 @@ async function uploadedCourse(courseId) {
     if (!res.ok) return null;
     const rows = await res.json();
     const row = Array.isArray(rows) ? rows[0] : null;
-    if (!row) return null;
-    return {
+    if (!row) return remember(key, null);
+    return remember(key, {
       title: row.title,
       description: row.course_data?.intro || row.description || '',
-    };
+    });
   } catch {
     return null;
   }
