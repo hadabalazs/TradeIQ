@@ -28,6 +28,7 @@ import AdminUpload from '@/pages/AdminUpload';
 import AdminData from '@/pages/AdminData';
 import AdminAudit from '@/pages/AdminAudit';
 import AdminAnalytics from '@/pages/AdminAnalytics';
+import AdminUsers from '@/pages/AdminUsers';
 import Verify from '@/pages/Verify';
 import Login from '@/pages/Login';
 
@@ -64,6 +65,7 @@ function App() {
                 <Route path="/admin/data" element={<AdminData />} />
                 <Route path="/admin/audit" element={<AdminAudit />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/editor" element={<AdminCourseEditor />} />
                 <Route path="/admin/course/:courseId" element={<AdminCourseEditor />} />
               </Route>
